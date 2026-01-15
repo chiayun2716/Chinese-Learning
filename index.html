@@ -1,0 +1,3267 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中文學習記錄器 - Firebase 雲端版</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #FF6B9D;
+            --secondary: #FEC84B;
+            --accent: #845EC2;
+            --bg-main: #FFF8F3;
+            --bg-card: #FFFFFF;
+            --text-dark: #2D3748;
+            --text-light: #718096;
+            --success: #38B2AC;
+            --shadow: 0 4px 20px rgba(255, 107, 157, 0.15);
+            --blue: #4A90E2;
+            --pink: #FF69B4;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: linear-gradient(135deg, #FFF8F3 0%, #FFE8F0 100%);
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            animation: fadeInDown 0.6s ease;
+        }
+
+        h1 {
+            font-family: 'Fredoka', 'Noto Sans TC', sans-serif;
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0 var(--secondary);
+        }
+
+        .subtitle {
+            color: var(--text-light);
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+
+        /* 學習者切換區域 */
+        .learner-switch {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+            text-align: center;
+            animation: fadeInDown 0.6s ease;
+            animation-delay: 0.2s;
+            animation-fill-mode: both;
+        }
+
+        .learner-switch-label {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 15px;
+        }
+
+        .learner-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .learner-btn {
+            background: white;
+            border: 3px solid #E2E8F0;
+            padding: 15px 30px;
+            border-radius: 15px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Noto Sans TC', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 150px;
+            justify-content: center;
+        }
+
+        .learner-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .learner-btn.active {
+            border-color: transparent;
+            color: white;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .learner-btn.brother {
+            border-color: var(--blue);
+            color: var(--blue);
+        }
+
+        .learner-btn.brother.active {
+            background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+        }
+
+        .learner-btn.sister {
+            border-color: var(--pink);
+            color: var(--pink);
+        }
+
+        .learner-btn.sister.active {
+            background: linear-gradient(135deg, #FF69B4 0%, #FF1493 100%);
+        }
+
+        .current-learner {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        .current-learner-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            animation: fadeInUp 0.6s ease;
+            animation-fill-mode: both;
+        }
+
+        .card:nth-child(1) {
+            animation-delay: 0.3s;
+        }
+
+        .card:nth-child(2) {
+            animation-delay: 0.4s;
+        }
+
+        .card h2 {
+            font-family: 'Fredoka', 'Noto Sans TC', sans-serif;
+            color: var(--accent);
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .icon {
+            font-size: 1.8rem;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #E2E8F0;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-family: 'Noto Sans TC', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        button {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Noto Sans TC', sans-serif;
+            box-shadow: 0 4px 15px rgba(255, 107, 157, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 157, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .button-secondary {
+            background: linear-gradient(135deg, var(--secondary) 0%, #FFD700 100%);
+            color: var(--text-dark);
+        }
+
+        .button-success {
+            background: linear-gradient(135deg, var(--success) 0%, #38B2AC 100%);
+            color: white;
+        }
+
+        .button-filter {
+            background: white;
+            color: var(--text-dark);
+            border: 2px solid #E2E8F0;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .button-filter:hover {
+            border-color: var(--primary);
+        }
+
+        .button-filter.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            color: white;
+            border-color: transparent;
+            transform: scale(1.05);
+            font-weight: 700;
+        }
+
+        .filter-checkbox {
+            width: 16px;
+            height: 16px;
+            border: 2px solid currentColor;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .button-filter.active .filter-checkbox {
+            background: white;
+            color: var(--primary);
+        }
+
+        .filter-count {
+            margin-left: auto;
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            font-weight: 600;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .button-filter.active .filter-count {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        .filter-checkbox::before {
+            content: '';
+            display: none;
+        }
+
+        .button-filter.active .filter-checkbox::before {
+            content: '✓';
+            display: block;
+            font-weight: 900;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .learned-chars {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+            min-height: 60px;
+        }
+
+        .char-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #FFE8F0 0%, #E0F2FE 100%);
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: 500;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            animation: popIn 0.3s ease;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .char-badge:hover {
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+
+        .char-badge .char-text {
+            cursor: pointer;
+        }
+
+        .remove-char {
+            display: none;
+        }
+
+        .char-badge.mastered {
+            background: linear-gradient(135deg, #D4F4DD 0%, #E8F5E9 100%);
+            border-color: var(--success);
+        }
+
+        .mastery-indicator {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--success);
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .source-tag-small {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            background: rgba(74, 144, 226, 0.15);
+            color: #4A90E2;
+            padding: 1px 4px;
+            border-radius: 4px;
+            font-size: 0.55rem;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+
+        .word-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .word-card {
+            background: linear-gradient(135deg, #F0F9FF 0%, #FFF1F2 100%);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            animation: fadeInScale 0.4s ease;
+            animation-fill-mode: both;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .word-card:hover {
+            border-color: var(--secondary);
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(254, 200, 75, 0.3);
+        }
+
+        .word-card.mastered {
+            background: linear-gradient(135deg, #D4F4DD 0%, #E8F5E9 100%);
+            border-color: var(--success);
+        }
+
+        .word-chinese {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .delete-word {
+            display: none;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #E0F2FE 0%, #FFF1F2 100%);
+            border-radius: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-top: 5px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            animation: slideUp 0.3s ease;
+        }
+
+        .review-mode {
+            background: linear-gradient(135deg, #845EC2 0%, #FF6B9D 100%);
+            color: white;
+            padding: 60px 40px;
+            border-radius: 20px;
+            text-align: center;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            animation: fadeInScale 0.5s ease;
+        }
+
+        .review-character {
+            font-size: 10rem;
+            font-weight: 700;
+            margin: 40px 0;
+            text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3);
+            line-height: 1;
+            word-break: break-all;
+            max-width: 100%;
+            overflow-wrap: break-word;
+        }
+
+        @media (max-width: 768px) {
+            .modal-content {
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+            
+            .review-mode {
+                padding: 30px 20px;
+                min-height: auto;
+            }
+        }
+
+        .review-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+
+        .review-progress {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+
+        .review-hint {
+            font-size: 1rem;
+            margin-top: 20px;
+            opacity: 0.8;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: scale(0);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 登入畫面 -->
+    <div id="loginSection" style="display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+        <div style="background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 40px rgba(132, 94, 194, 0.2); text-align: center; max-width: 400px;">
+            <h1 style="color: #845EC2; margin-bottom: 10px;">🌈 中文學習記錄器</h1>
+            <p style="color: #666; margin-bottom: 30px;">Firebase 雲端同步版</p>
+            <button onclick="signInWithGoogle()" style="display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; padding: 12px 24px; background: white; border: 2px solid #ddd; border-radius: 12px; font-size: 1rem; font-weight: 500; cursor: pointer;">
+                <svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                </svg>
+                使用 Google 帳號登入
+            </button>
+            <p style="color: #999; font-size: 0.85rem; margin-top: 20px;">登入後資料會自動同步到雲端</p>
+        </div>
+    </div>
+    
+    <!-- 主應用 -->
+    <div id="appContent" class="hidden">
+    <div class="container">
+        <!-- 使用者資訊 -->
+        <div style="text-align: right; padding: 10px 20px; background: white; border-radius: 12px; margin-bottom: 20px;">
+            <span style="color: #666; font-size: 0.9rem;">登入：<strong id="userEmail" style="color: #845EC2;"></strong></span>
+            <button onclick="signOut()" style="margin-left: 15px; padding: 6px 15px; background: #f5f5f5; border: none; border-radius: 6px; cursor: pointer;">登出</button>
+        </div>
+        
+        <header>
+            <h1>🌈 中文學習記錄器</h1>
+            <p class="subtitle">記錄學會的字和詞 · 智能複習系統</p>
+        </header>
+
+        <!-- 學習者切換區域 -->
+        <div class="learner-switch">
+            <div class="learner-switch-label">選擇學習者</div>
+            <div class="learner-buttons">
+                <button class="learner-btn brother active" onclick="switchLearner('brother')">
+                    <span>👦</span>
+                    <span>哥哥</span>
+                </button>
+                <button class="learner-btn sister" onclick="switchLearner('sister')">
+                    <span>👧</span>
+                    <span>妹妹</span>
+                </button>
+            </div>
+            <div class="current-learner">
+                目前學習者：<span class="current-learner-name" id="currentLearnerName">哥哥</span> ✓
+            </div>
+        </div>
+
+        <!-- 複習系統說明 -->
+        <div class="card" style="margin-bottom: 30px; background: linear-gradient(135deg, #E8F5E9 0%, #FFF9C4 100%);">
+            <h3 style="color: var(--accent); margin-bottom: 15px; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.5rem;">📚</span>
+                <span>複習系統說明</span>
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
+                <div style="background: white; padding: 12px; border-radius: 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <div style="font-size: 1.3rem; font-weight: 700; color: #FF6B9D; margin-bottom: 4px;">Level 0</div>
+                    <div style="font-size: 0.85rem; color: var(--text-dark); font-weight: 600;">新學</div>
+                    <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 4px;">1天後複習</div>
+                </div>
+                <div style="background: white; padding: 12px; border-radius: 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <div style="font-size: 1.3rem; font-weight: 700; color: #FEC84B; margin-bottom: 4px;">Level 1</div>
+                    <div style="font-size: 0.85rem; color: var(--text-dark); font-weight: 600;">認識</div>
+                    <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 4px;">3天後複習</div>
+                </div>
+                <div style="background: white; padding: 12px; border-radius: 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <div style="font-size: 1.3rem; font-weight: 700; color: #4A90E2; margin-bottom: 4px;">Level 2</div>
+                    <div style="font-size: 0.85rem; color: var(--text-dark); font-weight: 600;">熟悉</div>
+                    <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 4px;">7天後複習</div>
+                </div>
+                <div style="background: white; padding: 12px; border-radius: 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <div style="font-size: 1.3rem; font-weight: 700; color: #38B2AC; margin-bottom: 4px;">Level 3</div>
+                    <div style="font-size: 0.85rem; color: var(--text-dark); font-weight: 600;">掌握</div>
+                    <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 4px;">14天後複習</div>
+                </div>
+                <div style="background: white; padding: 12px; border-radius: 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <div style="font-size: 1.3rem; font-weight: 700; color: #845EC2; margin-bottom: 4px;">Level 4</div>
+                    <div style="font-size: 0.85rem; color: var(--text-dark); font-weight: 600;">精通</div>
+                    <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 4px;">60天後複習</div>
+                </div>
+            </div>
+            <div style="margin-top: 15px; padding: 12px; background: rgba(255,255,255,0.6); border-radius: 8px; font-size: 0.85rem; color: var(--text-dark);">
+                <strong>💡 使用提示：</strong>點擊字/詞可放大查看並調整 Level。系統會根據記憶曲線自動安排複習時間。
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <!-- 左側：學習的字 -->
+            <div class="card">
+                <h2><span class="icon">📝</span> 學會的字</h2>
+                
+                <div class="input-group">
+                    <label for="charInput">輸入學會的中文字</label>
+                    <input type="text" id="charInput" placeholder="例如：天 地 人">
+                </div>
+
+                <div class="button-group">
+                    <button onclick="addCharacter()">➕ 加入</button>
+                    <button class="button-secondary" onclick="showBulkInput()">📋 批量輸入</button>
+                    <button class="button-success" onclick="startCharReview()">🔄 複習字</button>
+                    <button class="button-success sister-only" onclick="startSimilarCharQuiz()" style="display: none; background: linear-gradient(135deg, #FFA07A 0%, #FF6B9D 100%);">🎯 辨識相近字</button>
+                </div>
+
+                <div class="button-group" style="margin-top: 10px;">
+                    <button class="button-secondary" onclick="exportData()">📤 匯出資料</button>
+                    <button class="button-secondary" onclick="triggerImport()">📥 匯入資料</button>
+                    <button class="button-secondary" onclick="viewHistory()">📜 查看紀錄</button>
+                    <button class="button-secondary sister-only" onclick="manageSimilarChars()" style="display: none; background: linear-gradient(135deg, #4A90E2 0%, #9B59B6 100%); color: white;">⚙️ 管理相近字</button>
+                    <button class="button-secondary" onclick="resetCurrentLearner()" style="background: linear-gradient(135deg, #FF6B9D 0%, #FEC84B 100%); color: white;">🔄 重置預設</button>
+                    <input type="file" id="importFile" accept="application/json" style="display: none;" onchange="importData(event)">
+                </div>
+
+                <div class="input-group" style="margin-top: 15px;">
+                    <label>篩選顯示</label>
+                    <div class="button-group">
+                        <button class="button-filter active" onclick="filterChars('all', this)">
+                            <span class="filter-checkbox"></span>
+                            <span>全部</span>
+                        </button>
+                        <button class="button-filter" onclick="filterChars(0, this)">
+                            <span class="filter-checkbox"></span>
+                            <span>新學</span>
+                        </button>
+                        <button class="button-filter" onclick="filterChars(1, this)">
+                            <span class="filter-checkbox"></span>
+                            <span>認識</span>
+                        </button>
+                        <button class="button-filter" onclick="filterChars(2, this)">
+                            <span class="filter-checkbox"></span>
+                            <span>熟悉</span>
+                        </button>
+                        <button class="button-filter" onclick="filterChars(3, this)">
+                            <span class="filter-checkbox"></span>
+                            <span>掌握</span>
+                        </button>
+                        <button class="button-filter" onclick="filterChars(4, this)">
+                            <span class="filter-checkbox"></span>
+                            <span>精通</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="input-group" style="margin-top: 10px;" id="semesterFilterChar">
+                    <label>依學期篩選</label>
+                    <div class="button-group">
+                        <button class="button-filter active" onclick="filterCharsBySemester('all', this)">
+                            <span class="filter-checkbox"></span>
+                            <span>全部</span>
+                            <span class="filter-count" id="semCharCount-all"></span>
+                        </button>
+                        <button class="button-filter" onclick="filterCharsBySemester('1上', this)">
+                            <span class="filter-checkbox"></span>
+                            <span>一上</span>
+                            <span class="filter-count" id="semCharCount-1上"></span>
+                        </button>
+                        <button class="button-filter" onclick="filterCharsBySemester('1下', this)">
+                            <span class="filter-checkbox"></span>
+                            <span>一下</span>
+                            <span class="filter-count" id="semCharCount-1下"></span>
+                        </button>
+                        <button class="button-filter" onclick="filterCharsBySemester('2上', this)">
+                            <span class="filter-checkbox"></span>
+                            <span>二上</span>
+                            <span class="filter-count" id="semCharCount-2上"></span>
+                        </button>
+                        <button class="button-filter" onclick="filterCharsBySemester('2下', this)">
+                            <span class="filter-checkbox"></span>
+                            <span>二下</span>
+                            <span class="filter-count" id="semCharCount-2下"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="input-group" style="margin-top: 10px;" id="lessonFilterChar">
+                    <label>依課別篩選</label>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <select id="lessonSelect" style="flex: 1; padding: 8px; border: 2px solid rgba(132, 94, 194, 0.3); border-radius: 8px; background: white; font-size: 0.9rem; cursor: pointer;">
+                            <option value="all">全部課別</option>
+                        </select>
+                        <button onclick="applyLessonFilter('char')" style="padding: 8px 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
+                            套用
+                        </button>
+                        <button onclick="clearLessonFilter('char')" style="padding: 8px 15px; background: rgba(132, 94, 194, 0.2); color: #667eea; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
+                            清除
+                        </button>
+                    </div>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalChars">0</div>
+                        <div class="stat-label">已學的字</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="reviewChars">0</div>
+                        <div class="stat-label">需複習</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="masteredChars">0</div>
+                        <div class="stat-label">已掌握</div>
+                    </div>
+                </div>
+
+                <div class="learned-chars" id="learnedChars">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📚</div>
+                        <p>還沒有記錄，開始添加吧！</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側：學會的詞 -->
+            <div class="card">
+                <h2><span class="icon">✨</span> 學會的詞</h2>
+                
+                <div class="input-group">
+                    <label for="wordInput">手動輸入詞彙（會自動記錄組成的字）</label>
+                    <input type="text" id="wordInput" placeholder="例如：天天 日日 大人">
+                </div>
+
+                <div class="button-group">
+                    <button onclick="addWord()">➕ 加入詞彙</button>
+                    <button class="button-success" onclick="startWordReview()">🔄 複習詞</button>
+                </div>
+
+                <div class="input-group" style="margin-top: 15px;">
+                    <label>篩選顯示</label>
+                    <div class="button-group">
+                        <button class="button-filter active" onclick="filterWords('all', this)">
+                            <span class="filter-checkbox"></span>
+                            <span>全部</span>
+                        </button>
+                        <button class="button-filter" onclick="filterWords(0, this)">
+                            <span class="filter-checkbox"></span>
+                            <span>新學</span>
+                        </button>
+                        <button class="button-filter" onclick="filterWords(1, this)">
+                            <span class="filter-checkbox"></span>
+                            <span>認識</span>
+                        </button>
+                        <button class="button-filter" onclick="filterWords(2, this)">
+                            <span class="filter-checkbox"></span>
+                            <span>熟悉</span>
+                        </button>
+                        <button class="button-filter" onclick="filterWords(3, this)">
+                            <span class="filter-checkbox"></span>
+                            <span>掌握</span>
+                        </button>
+                        <button class="button-filter" onclick="filterWords(4, this)">
+                            <span class="filter-checkbox"></span>
+                            <span>精通</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="input-group" style="margin-top: 10px;" id="semesterFilterWord">
+                    <label>依學期篩選</label>
+                    <div class="button-group">
+                        <button class="button-filter active" onclick="filterWordsBySemester('all', this)">
+                            <span class="filter-checkbox"></span>
+                            <span>全部</span>
+                            <span class="filter-count" id="semWordCount-all"></span>
+                        </button>
+                        <button class="button-filter" onclick="filterWordsBySemester('1上', this)">
+                            <span class="filter-checkbox"></span>
+                            <span>一上</span>
+                            <span class="filter-count" id="semWordCount-1上"></span>
+                        </button>
+                        <button class="button-filter" onclick="filterWordsBySemester('1下', this)">
+                            <span class="filter-checkbox"></span>
+                            <span>一下</span>
+                            <span class="filter-count" id="semWordCount-1下"></span>
+                        </button>
+                        <button class="button-filter" onclick="filterWordsBySemester('2上', this)">
+                            <span class="filter-checkbox"></span>
+                            <span>二上</span>
+                            <span class="filter-count" id="semWordCount-2上"></span>
+                        </button>
+                        <button class="button-filter" onclick="filterWordsBySemester('2下', this)">
+                            <span class="filter-checkbox"></span>
+                            <span>二下</span>
+                            <span class="filter-count" id="semWordCount-2下"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="input-group" style="margin-top: 10px;" id="lessonFilterWord">
+                    <label>依課別篩選</label>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <select id="lessonSelectWord" style="flex: 1; padding: 8px; border: 2px solid rgba(132, 94, 194, 0.3); border-radius: 8px; background: white; font-size: 0.9rem; cursor: pointer;">
+                            <option value="all">全部課別</option>
+                        </select>
+                        <button onclick="applyLessonFilter('word')" style="padding: 8px 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
+                            套用
+                        </button>
+                        <button onclick="clearLessonFilter('word')" style="padding: 8px 15px; background: rgba(132, 94, 194, 0.2); color: #667eea; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
+                            清除
+                        </button>
+                    </div>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalWords">0</div>
+                        <div class="stat-label">已學的詞</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="reviewWords">0</div>
+                        <div class="stat-label">需複習</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="masteredWords">0</div>
+                        <div class="stat-label">已掌握</div>
+                    </div>
+                </div>
+
+                <div class="word-grid" id="wordGrid">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🌟</div>
+                        <p>輸入詞彙開始記錄</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 批量輸入模態框 -->
+    <div class="modal" id="bulkModal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 20px;">批量輸入中文字</h2>
+            <div class="input-group">
+                <label for="bulkInput">可以一次輸入多個字，用空格或換行分隔</label>
+                <textarea id="bulkInput" placeholder="例如：天 地 人 日 月&#10;或：天地人日月"></textarea>
+            </div>
+            <div class="button-group">
+                <button onclick="addBulkCharacters()">確認添加</button>
+                <button class="button-secondary" onclick="closeBulkInput()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 複習模態框 -->
+    <div class="modal" id="reviewModal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="review-mode">
+                <div class="review-progress" id="reviewProgress">準備好了嗎？</div>
+                <div class="review-character" id="reviewCharacter">開始</div>
+                <div class="review-hint" id="reviewHint">認識這個字/詞嗎？</div>
+                <div class="review-buttons">
+                    <button class="button-success" onclick="markCorrect()">✓ 認識</button>
+                    <button class="button-secondary" onclick="markIncorrect()">✗ 不認識</button>
+                    <button onclick="endReview()">結束複習</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 放大顯示模態框 -->
+    <div class="modal" id="enlargeModal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="review-mode">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 10px;">
+                    <div class="review-progress" id="enlargeLevel">Level 0</div>
+                    <div id="enlargeSource" 
+                         onclick="editSource()" 
+                         style="font-size: 0.85rem; color: rgba(255,255,255,0.7); padding: 4px 12px; background: rgba(74, 144, 226, 0.2); border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 5px;"
+                         title="點擊修改來源">
+                        <span id="enlargeSourceText"></span>
+                        <span style="font-size: 0.7rem;">✏️</span>
+                    </div>
+                </div>
+                <div class="review-character" id="enlargeCharacter" style="margin: 60px 0;">字</div>
+                
+                <div style="margin: 20px 0;">
+                    <p style="font-size: 0.9rem; margin-bottom: 8px;">字體大小</p>
+                    <input type="range" id="fontSizeSlider" min="3" max="12" value="10" step="0.5" 
+                           style="width: 100%; cursor: pointer;" 
+                           oninput="adjustFontSize(this.value)">
+                </div>
+                
+                <div style="margin: 20px 0;">
+                    <p style="font-size: 1rem; margin-bottom: 10px;">設定掌握程度：</p>
+                    <div class="button-group" style="justify-content: center;">
+                        <button class="button-filter" style="min-width: 50px;" onclick="setLevel(0)">
+                            <span style="display: block; font-weight: 700;">0</span>
+                            <span style="display: block; font-size: 0.7rem;">新學</span>
+                        </button>
+                        <button class="button-filter" style="min-width: 50px;" onclick="setLevel(1)">
+                            <span style="display: block; font-weight: 700;">1</span>
+                            <span style="display: block; font-size: 0.7rem;">認識</span>
+                        </button>
+                        <button class="button-filter" style="min-width: 50px;" onclick="setLevel(2)">
+                            <span style="display: block; font-weight: 700;">2</span>
+                            <span style="display: block; font-size: 0.7rem;">熟悉</span>
+                        </button>
+                        <button class="button-filter" style="min-width: 50px;" onclick="setLevel(3)">
+                            <span style="display: block; font-weight: 700;">3</span>
+                            <span style="display: block; font-size: 0.7rem;">掌握</span>
+                        </button>
+                        <button class="button-filter" style="min-width: 50px;" onclick="setLevel(4)">
+                            <span style="display: block; font-weight: 700;">4</span>
+                            <span style="display: block; font-size: 0.7rem;">精通</span>
+                        </button>
+                    </div>
+                    <p style="font-size: 0.75rem; color: rgba(255,255,255,0.7); margin-top: 10px; text-align: center;">
+                        複習間隔：1天 → 3天 → 7天 → 14天 → 60天
+                    </p>
+                </div>
+                
+                <div class="review-buttons">
+                    <button class="button-secondary" onclick="deleteFromEnlarge()">🗑️ 刪除</button>
+                    <button onclick="closeEnlarge()">關閉</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 管理相近字模態框 -->
+    <div class="modal" id="manageSimilarModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <h2 style="margin-bottom: 20px; color: #4A90E2;">⚙️ 管理相近字組</h2>
+            
+            <div style="background: #f5f7fa; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                <h3 style="font-size: 1rem; margin-bottom: 15px; color: #333;">➕ 新增相近字組</h3>
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                    <input type="text" id="similarChar1" placeholder="第一個字" maxlength="1" style="width: 80px; font-size: 1.5rem; text-align: center; padding: 10px; border: 2px solid #4A90E2; border-radius: 8px;">
+                    <span style="font-size: 1.2rem; color: #666;">vs</span>
+                    <input type="text" id="similarChar2" placeholder="第二個字" maxlength="1" style="width: 80px; font-size: 1.5rem; text-align: center; padding: 10px; border: 2px solid #4A90E2; border-radius: 8px;">
+                    <button onclick="addSimilarPair()" style="padding: 10px 20px; background: linear-gradient(135deg, #4A90E2 0%, #9B59B6 100%); color: white; border: none; border-radius: 8px; cursor: pointer;">新增</button>
+                </div>
+                <p style="font-size: 0.85rem; color: #666; margin-top: 5px;">💡 例如：日 vs 目、人 vs 入</p>
+            </div>
+            
+            <div id="similarPairsList" style="max-height: 300px; overflow-y: auto;">
+                <h3 style="font-size: 1rem; margin-bottom: 15px; color: #333;">📋 已建立的相近字組</h3>
+                <div id="pairsContainer"></div>
+            </div>
+            
+            <div class="button-group" style="margin-top: 20px;">
+                <button onclick="closeSimilarManage()">關閉</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 相近字測驗模態框 -->
+    <div class="modal" id="similarQuizModal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="review-mode">
+                <div class="review-progress" id="quizProgress">準備好了嗎？</div>
+                
+                <!-- 語音播放區域 -->
+                <div style="background: linear-gradient(135deg, #FFE8F0 0%, #FFF8F3 100%); border-radius: 20px; padding: 30px; margin: 20px 0;">
+                    <div style="font-size: 4rem; margin-bottom: 15px; animation: pulse 2s infinite;">🔊</div>
+                    <button onclick="playSimilarCharSound()" 
+                            style="background: linear-gradient(135deg, #FF6B9D 0%, #FF8FB3 100%); 
+                                   color: white; 
+                                   border: none; 
+                                   border-radius: 15px; 
+                                   padding: 15px 40px; 
+                                   font-size: 1.2rem; 
+                                   font-weight: 600; 
+                                   cursor: pointer; 
+                                   box-shadow: 0 4px 15px rgba(255, 107, 157, 0.3);
+                                   font-family: 'Noto Sans TC', sans-serif;">
+                        🔁 再聽一次
+                    </button>
+                </div>
+                
+                <div style="margin: 20px 0;">
+                    <p style="font-size: 1.3rem; color: rgba(255,255,255,0.9); margin-bottom: 20px;" id="quizQuestion">請選出你聽到的字：</p>
+                </div>
+                <div class="review-buttons" style="flex-direction: column; gap: 15px;">
+                    <button class="button-success" onclick="selectQuizAnswer(0)" id="quizOption1" style="width: 100%; font-size: 3rem; padding: 30px;">選項1</button>
+                    <button class="button-success" onclick="selectQuizAnswer(1)" id="quizOption2" style="width: 100%; font-size: 3rem; padding: 30px;">選項2</button>
+                </div>
+                <div style="margin-top: 20px;">
+                    <button class="button-secondary" id="endQuizBtn" onclick="endSimilarQuiz()" 
+                            style="font-size: 1.1rem; padding: 12px 30px; cursor: pointer; z-index: 1000; position: relative;">
+                        ❌ 結束測驗
+                    </button>
+                </div>
+                <div id="quizResult" style="margin-top: 20px; padding: 15px; border-radius: 8px; display: none; font-size: 1.2rem;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== Firebase 初始化 ====================
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyAzFGk0_nvNTMR0HXZslHclOP9nKRRIcPU",
+            authDomain: "chinese-flashcard-ade72.firebaseapp.com",
+            projectId: "chinese-flashcard-ade72",
+            storageBucket: "chinese-flashcard-ade72.firebasestorage.app",
+            messagingSenderId: "169443250338",
+            appId: "1:169443250338:web:101b2507c9a8a7c3c907fb",
+            measurementId: "G-5QV4M1KGV0"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        let currentUser = null;
+        
+        // ==================== 全域變數 ====================
+        
+        // 記憶曲線間隔（天數）- 5級制
+        // Level 0: 新學 (1天後複習)
+        // Level 1: 認識 (3天後複習)
+        // Level 2: 熟悉 (7天後複習)
+        // Level 3: 掌握 (14天後複習)
+        // Level 4: 精通 (60天後複習)
+        const REVIEW_INTERVALS = [1, 3, 7, 14, 60];
+        const HISTORY_MAX_SIZE = 1000;
+        
+        let currentLearner = 'brother'; // 'brother' 或 'sister'
+        let learnedCharacters = new Map();
+        let learnedWords = new Map();
+        let reviewList = [];
+        let reviewIndex = 0;
+        let reviewType = '';
+        let charFilter = new Set(['all']); // 改用 Set 來支援複選
+        let wordFilter = new Set(['all']); // 改用 Set 來支援複選
+        let charSemesterFilter = new Set(['all']); // 學期篩選改為 Set 支援複選
+        let wordSemesterFilter = new Set(['all']); // 學期篩選改為 Set 支援複選
+        let charLessonFilter = 'all'; // 課別篩選
+        let wordLessonFilter = 'all'; // 課別篩選
+        
+        // 相近字辨識系統（只給妹妹用）
+        let similarCharPairs = []; // [{char1: '日', char2: '目'}, ...]
+        let quizList = [];
+        let quizIndex = 0;
+        let currentQuizAnswer = 0; // 0 或 1
+
+        // ==================== 學習者切換功能 ====================
+        
+        function resetCurrentLearner() {
+            const learnerName = currentLearner === 'brother' ? '哥哥' : '妹妹';
+            if (!confirm(`確定要重置${learnerName}的資料嗎？\n\n這將清除所有字詞和紀錄，並載入預設資料。`)) {
+                return;
+            }
+            
+            // 清除當前學習者的資料
+            localStorage.removeItem(`learner_${currentLearner}_data`);
+            localStorage.removeItem(`learner_${currentLearner}_history`);
+            
+            // 重新載入（會觸發預設資料載入）
+            loadCurrentLearnerData();
+            updateUI();
+            
+            showNotification(`✅ 已重置${learnerName}的預設資料`);
+        }
+        
+        async function switchLearner(learner) {
+            // 儲存當前學習者的資料到 Firebase
+            await saveToFirebase();
+            
+            // 切換學習者
+            currentLearner = learner;
+            localStorage.setItem('currentLearner', learner);
+            
+            // 更新按鈕狀態
+            document.querySelectorAll('.learner-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.learner-btn.${learner}`).classList.add('active');
+            
+            // 更新顯示名稱
+            const name = learner === 'brother' ? '哥哥' : '妹妹';
+            document.getElementById('currentLearnerName').textContent = name;
+            
+            // 從 Firebase 載入新學習者的資料
+            await loadFromFirebase();
+            
+            // 重置篩選器
+            charFilter = new Set(['all']);
+            wordFilter = new Set(['all']);
+            charSemesterFilter = new Set(['all']);
+            wordSemesterFilter = new Set(['all']);
+            charLessonFilter = 'all';
+            wordLessonFilter = 'all';
+            resetFilterButtons();
+            
+            // 控制學期篩選和課別篩選的顯示（只有哥哥才顯示）
+            const semesterFilterChar = document.getElementById('semesterFilterChar');
+            const semesterFilterWord = document.getElementById('semesterFilterWord');
+            const lessonFilterChar = document.getElementById('lessonFilterChar');
+            const lessonFilterWord = document.getElementById('lessonFilterWord');
+            
+            // 控制相近字辨識按鈕的顯示（只有妹妹才顯示）
+            const sisterOnlyButtons = document.querySelectorAll('.sister-only');
+            
+            if (learner === 'brother') {
+                semesterFilterChar.style.display = 'block';
+                semesterFilterWord.style.display = 'block';
+                lessonFilterChar.style.display = 'block';
+                lessonFilterWord.style.display = 'block';
+                // 更新課別選項和學期統計
+                updateLessonOptions();
+                updateSemesterCounts();
+                // 隱藏妹妹專屬按鈕
+                sisterOnlyButtons.forEach(btn => btn.style.display = 'none');
+            } else {
+                semesterFilterChar.style.display = 'none';
+                semesterFilterWord.style.display = 'none';
+                lessonFilterChar.style.display = 'none';
+                lessonFilterWord.style.display = 'none';
+                // 顯示妹妹專屬按鈕
+                sisterOnlyButtons.forEach(btn => btn.style.display = 'inline-block');
+            }
+            
+            // 更新UI
+            updateUI();
+            
+            showNotification(`已切換到${name}的學習記錄`);
+        }
+
+        function saveCurrentLearnerData() {
+            const data = {
+                characters: Object.fromEntries(learnedCharacters),
+                words: Object.fromEntries(learnedWords),
+                timestamp: new Date().toISOString()
+            };
+            localStorage.setItem(`learner_${currentLearner}_data`, JSON.stringify(data));
+        }
+
+        function loadCurrentLearnerData() {
+            const saved = localStorage.getItem(`learner_${currentLearner}_data`);
+            
+            learnedCharacters.clear();
+            learnedWords.clear();
+            
+            let hasData = false;
+            
+            if (saved) {
+                const data = JSON.parse(saved);
+                
+                if (data.characters && Object.keys(data.characters).length > 0) {
+                    if (Array.isArray(data.characters)) {
+                        data.characters.forEach(char => {
+                            learnedCharacters.set(char, createNewItem());
+                        });
+                    } else {
+                        learnedCharacters = new Map(Object.entries(data.characters));
+                    }
+                    hasData = true;
+                }
+                
+                if (data.words && Object.keys(data.words).length > 0) {
+                    if (Array.isArray(data.words)) {
+                        data.words.forEach(word => {
+                            learnedWords.set(word, createNewItem());
+                        });
+                    } else {
+                        learnedWords = new Map(Object.entries(data.words));
+                    }
+                }
+            }
+            
+            // 如果 localStorage 沒有資料或資料是空的，載入預設資料
+            if (!hasData) {
+                if (currentLearner === 'sister') {
+                // 妹妹的預設字庫
+                const sisterDefaultChars = '一三下乳二五亮人佩來兔公冰冷去友呀呆哥四地坐多大妹媽子宛小少屍師快星書月朋東果桃樂橘歌洗潤火炒煮熊爸牙狗狸猩猴玩球生男紅綠羊老耳肉船色菜藍蘋蛇蛋西讀豬貓買車過醫門開阿雞電頭飛飯餅養香高髮鴨黃';
+                
+                for (let char of sisterDefaultChars) {
+                    learnedCharacters.set(char, createNewItem());
+                }
+                
+                console.log('✓ 載入妹妹預設資料:', learnedCharacters.size, '個字');
+                } else if (currentLearner === 'brother') {
+                // 哥哥的一上字詞預設資料（0-6課）
+                const now = Date.now();
+                
+                const brotherChars = {"一":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-0"},"二":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-0"},"三":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-0"},"四":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-0"},"五":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-0"},"六":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-0"},"七":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-0"},"八":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-0"},"九":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-0"},"十":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-0"},"拍":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-1"},"手":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-1"},"左":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-1"},"右":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-1"},"你":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-1"},"他":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-1"},"也":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-1"},"上":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-1"},"下":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-1"},"這":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-2"},"是":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-2"},"誰":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-2"},"的":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-2"},"我":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-2"},"分":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-2"},"好":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-2"},"了":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-2"},"啊":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-2"},"多":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-2"},"個":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-2"},"秋":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-3"},"千":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-3"},"和":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-3"},"玩":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-3"},"陪":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-3"},"高":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-3"},"山":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-3"},"到":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-3"},"大":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-3"},"海":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-3"},"朋":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-3"},"友":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-3"},"們":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-3"},"起":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-3"},"子":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-4"},"小":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-4"},"課":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-4"},"兩":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-4"},"人":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-4"},"拉":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-4"},"看":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-4"},"找":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-4"},"隻":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-4"},"青":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-4"},"蛙":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-4"},"開":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-4"},"心":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-4"},"比":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-5"},"門":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-5"},"裡":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-5"},"外":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-5"},"有":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-5"},"什":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-5"},"麼":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-5"},"不":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-5"},"同":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-5"},"早":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-5"},"晚":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-5"},"王":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-5"},"主":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-5"},"又":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-5"},"路":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-6"},"長":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-6"},"白":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-6"},"花":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-6"},"紅":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-6"},"走":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-6"},"在":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-6"},"向":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-6"},"說":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-6"},"朵":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-6"},"從":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-6"},"頭":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-6"},"那":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-6"}};
+                
+                const brotherWords = {"拍手":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-1"},"左右":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-1"},"上上下下":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-1"},"一個":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-2"},"秋千":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-3"},"高山":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-3"},"大海":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-3"},"我們":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-3"},"好朋友":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-3"},"一起":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-3"},"個子":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-4"},"上課":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-4"},"青蛙":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-4"},"開心":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-4"},"門外":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-5"},"什麼":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-5"},"不同":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-5"},"早上":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-5"},"晚上":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-5"},"王子":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-5"},"主人":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-5"},"小路":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-6"},"白花":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-6"},"紅花":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-6"},"一頭":{"level":0,"lastReview":now,"nextReview":now,"source":"1上-6"}};
+                
+                // 一下的字詞資料（第1-12課）
+                const brotherChars_1down = {"事":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"享":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-4"},"亮":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-7"},"今":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-11"},"件":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"休":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-12"},"伴":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"低":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-9"},"作":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-7"},"來":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-3"},"做":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"停":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-12"},"像":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-4"},"先":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-1"},"光":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"兒":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-12"},"公":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"再":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-1"},"出":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-2"},"刷":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-9"},"前":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-12"},"加":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-12"},"化":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"升":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"半":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-12"},"卡":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-6"},"去":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-1"},"受":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-4"},"口":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-4"},"吃":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-3"},"吧":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-12"},"呢":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-2"},"唱":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-2"},"問":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"喜":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-6"},"嗎":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-11"},"回":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-4"},"國":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-9"},"園":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-2"},"地":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"夢":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-7"},"天":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-1"},"太":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-9"},"奇":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"奶":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-6"},"她":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-6"},"妹":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-8"},"始":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-3"},"媽":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-3"},"學":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-11"},"它":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"完":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-1"},"家":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-4"},"寫":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-6"},"就":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-3"},"己":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-7"},"幫":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-12"},"床":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-6"},"弟":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-6"},"張":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-11"},"彩":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-9"},"很":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-9"},"後":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-3"},"得":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-7"},"快":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-2"},"怎":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"息":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-12"},"您":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-6"},"情":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"想":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-12"},"慢":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-12"},"成":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-7"},"戲":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-8"},"才":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"把":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-4"},"拿":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-6"},"掃":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-9"},"收":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-11"},"放":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"新":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-2"},"於":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"日":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-11"},"時":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-11"},"暖":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-4"},"更":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-7"},"會":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-3"},"桌":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-3"},"棉":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-7"},"楚":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-12"},"樂":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-3"},"樹":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-9"},"次":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-11"},"歌":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-2"},"歡":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-6"},"正":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-2"},"每":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"水":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-1"},"沒":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-2"},"油":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-12"},"洗":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-9"},"淨":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-9"},"清":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-12"},"港":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-4"},"游":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-8"},"溫":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-4"},"滴":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-8"},"漂":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-7"},"澆":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"燈":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-12"},"爸":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-4"},"片":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-6"},"珍":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-8"},"珠":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-8"},"班":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-6"},"生":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-11"},"真":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-3"},"知":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-11"},"短":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-3"},"祝":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-11"},"神":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"福":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-11"},"種":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"空":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-1"},"穿":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-8"},"笑":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"第":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-11"},"箏":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"糖":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-7"},"給":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-6"},"線":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"缸":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-8"},"聞":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-2"},"聽":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-2"},"脫":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-4"},"自":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-7"},"船":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-4"},"芽":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-2"},"草":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-1"},"菜":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-3"},"落":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-8"},"葉":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-9"},"著":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-2"},"虹":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-9"},"蟲":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-1"},"要":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-1"},"見":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-4"},"記":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-11"},"話":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"認":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-9"},"謝":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-11"},"變":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-7"},"趣":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"跑":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"跟":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-6"},"跳":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"身":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-2"},"躺":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-7"},"輕":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-2"},"送":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-9"},"遊":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-8"},"過":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-3"},"道":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-11"},"都":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-6"},"酒":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-6"},"重":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-3"},"金":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-8"},"院":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"陣":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-3"},"除":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-9"},"陽":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"雙":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-8"},"雨":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-8"},"雲":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-1"},"需":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"靜":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-1"},"靠":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-4"},"面":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-8"},"鞋":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-4"},"音":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-3"},"顆":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-8"},"風":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"香":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-2"},"馬":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-9"},"魚":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-8"},"鳥":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-1"},"鵝":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-7"},"黑":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-7"},"點":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-12"}};
+                
+                const brotherWords_1down = {"一半":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-12"},"一陣":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-3"},"一雙":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-8"},"一點":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-12"},"上桌":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-3"},"事情":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"享受":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-4"},"今天":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-11"},"休息":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-12"},"作夢":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-7"},"前面":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-12"},"加油":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-12"},"升高":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"卡片":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-6"},"喜歡":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-6"},"回家":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-4"},"國王":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-9"},"外公":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"天空":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-1"},"天鵝":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-7"},"太陽":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-9"},"奶奶":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-6"},"好吃":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-3"},"妹妹":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-8"},"媽媽":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-3"},"弟弟":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-6"},"怎麼":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"放學":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-11"},"新芽":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-2"},"於是":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"有趣":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"水面":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-8"},"沒有":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-2"},"洗淨":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-9"},"清楚":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-12"},"港口":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-4"},"溫暖":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-4"},"漂亮":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-7"},"澆水":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"爸爸":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-4"},"珍珠":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-8"},"生日":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-11"},"白雲":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-1"},"知道":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-11"},"祝福":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-11"},"神奇":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"種子":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"自己":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-7"},"花園":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-2"},"花草":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-1"},"草地":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"落下":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-8"},"葉子":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-9"},"見聞":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-4"},"記得":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-11"},"認真":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-9"},"說話":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"謝謝":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-11"},"變化":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"變成":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-7"},"起床":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-6"},"跟班":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-6"},"路燈":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-12"},"身上":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-2"},"輕快":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-2"},"遊戲":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-8"},"過後":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-3"},"金魚":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-8"},"長線":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"開始":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-3"},"院子":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"陪伴":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"陽光":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"雨鞋":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-8"},"需要":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-5"},"風箏":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"馬路":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-9"},"魚缸":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-8"},"一會兒":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-12"},"大掃除":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-9"},"家家酒":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-6"},"棉花糖":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-7"},"第一次":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-11"},"靜靜的":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-1"},"音樂會":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-3"},"說說笑笑":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"跑跑跳跳":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-10"},"高高低低":{"level":0,"lastReview":now,"nextReview":now,"source":"1下-9"}};
+                
+                // 二上的字詞資料（第1-12課）
+                const brotherChars_2up = {"中":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"乾":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-6"},"以":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"伸":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"但":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-8"},"位":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"假":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"充":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"全":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"具":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"冒":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"冬":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"冰":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"冷":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"切":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"划":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"力":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"動":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-4"},"北":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"午":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-8"},"協":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-4"},"南":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"卻":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"原":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"反":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"叔":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-3"},"只":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"叫":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"可":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-4"},"司":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"吐":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"吹":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"咪":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"哇":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-4"},"哈":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-8"},"哪":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-7"},"喝":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-8"},"單":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-7"},"嘴":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"因":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-6"},"圍":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"圓":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"團":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"坐":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"城":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"埔":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-6"},"堡":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"夜":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"夾":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"如":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-6"},"妙":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"娘":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-3"},"娶":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-3"},"季":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"客":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-6"},"容":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-4"},"寒":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"少":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-9"},"居":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"屋":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-3"},"巷":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-3"},"希":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"師":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"帶":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"年":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"幸":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"幾":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-9"},"往":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-4"},"待":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"忘":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-8"},"忙":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-3"},"念":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"思":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-7"},"急":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"愉":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"意":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-6"},"愛":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-6"},"慌":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-7"},"戴":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"扁":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"打":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-3"},"扮":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-3"},"拔":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-4"},"捕":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"捧":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-3"},"排":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-6"},"接":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"搖":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-9"},"操":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-9"},"故":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"敢":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-7"},"方":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"旅":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-8"},"明":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-7"},"春":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"暑":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"書":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"曹":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-9"},"最":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-4"},"月":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-6"},"服":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"望":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"期":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"本":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"東":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-7"},"林":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-8"},"柱":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-9"},"柿":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-6"},"梨":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"棒":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-7"},"森":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-8"},"棵":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-8"},"欣":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"歡":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-6"},"歲":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-9"},"汗":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-4"},"沙":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"河":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-4"},"泳":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"洋":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"活":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"淡":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"淺":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"滿":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-7"},"濃":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"灣":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"火":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"烏":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-8"},"然":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-9"},"煙":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"熱":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"牠":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"現":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"瓶":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-8"},"甲":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-9"},"番":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"發":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"相":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"石":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-8"},"碗":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"竟":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-9"},"筆":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-3"},"粗":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-9"},"綻":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"綠":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-6"},"緊":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-3"},"罩":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"老":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"聊":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"聰":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-7"},"臺":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"舞":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"茄":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"荷":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"蘭":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"蛋":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"蝴":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-3"},"蝶":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-3"},"裳":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-7"},"複":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"許":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-8"},"認":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"該":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-8"},"貨":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"走":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-6"},"越":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"跑":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-4"},"輪":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"轉":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"近":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"迎":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"運":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-4"},"進":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-6"},"遊":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-6"},"部":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-9"},"鄉":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"配":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"鎮":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-6"},"難":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-8"},"雖":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"雪":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"雲":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"霧":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"面":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"頂":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-3"},"領":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-9"},"飯":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"餐":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"香":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"鴉":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-8"},"鶴":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"黃":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-6"},"鼓":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"齊":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-4"}};
+                
+                const brotherWords_2up = {"一齊":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-4"},"上午":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-8"},"不敢":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-7"},"中秋":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-6"},"叔叔":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-3"},"右忙":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-3"},"可以":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"名字":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-9"},"呼喊":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"嘴唇":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"嘴巴":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"四季":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"圓圓":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"城堡":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"夜晚":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"大家":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"天黑":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-7"},"夾餡":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"如何":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-9"},"妙事":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"家人":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"家鄉":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"寒冷":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"小鎮":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-6"},"居然":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"希望":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"年紀":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-9"},"年貨":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"幸福":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"彩筆":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-3"},"思念":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"愉快":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"慌張":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-7"},"成為":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"打扮":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-3"},"拔河":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-4"},"捕魚":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"捧花":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-3"},"接著":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"搖頭":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-9"},"故事":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"新娘":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-3"},"方法":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-8"},"旅行":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-8"},"早餐":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"春節":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"暑假":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"書香":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"曹操":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-9"},"最後":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-4"},"期待":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"東西":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-7"},"柱子":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-9"},"森林":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-8"},"模樣":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-3"},"欣喜":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"比賽":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-4"},"汗水":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-4"},"沙子":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"活動":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"海洋":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"淡淡":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"滿街":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-7"},"火鍋":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"烏鴉":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-8"},"然後":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-9"},"煙火":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"熱絡":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"熱鬧":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-4"},"牠們":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"現在":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"瓶子":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-8"},"用力":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"番茄":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"發現":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"相反":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"石頭":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-8"},"碗公":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"竟然":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-9"},"笑容":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-4"},"笑臉":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"等待":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"簡單":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-7"},"粗大":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-9"},"綻放":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"美妙":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"美麗":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-3"},"翅膀":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"老師":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"聊天":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"聰明":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-7"},"臺灣":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"舞者":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"著急":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"蝴蝶":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-3"},"衣服":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"衣裳":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-7"},"許多":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-8"},"認識":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"課本":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-1"},"走進":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-6"},"起司":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"越南":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"跑步":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-4"},"輪子":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"轉動":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"近海":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-5"},"遊客":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-6"},"部分":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-9"},"雖然":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"難道":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-8"},"雪梨":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"面具":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-11"},"風乾":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-6"},"首先":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-9"},"圓鼓鼓":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"大會舞":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-4"},"年夜飯":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-10"},"番茄醬":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"笑咪咪":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-12"},"運動會":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-4"},"金黃色":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-6"},"四四方方":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-2"},"左思右想":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-7"},"親朋好友":{"level":0,"lastReview":now,"nextReview":now,"source":"2上-6"}};
+                
+                Object.entries(brotherChars).forEach(([char, data]) => {
+                    learnedCharacters.set(char, data);
+                });
+                
+                Object.entries(brotherWords).forEach(([word, data]) => {
+                    learnedWords.set(word, data);
+                });
+                
+                // 合併一下的字詞
+                Object.entries(brotherChars_1down).forEach(([char, data]) => {
+                    learnedCharacters.set(char, data);
+                });
+                
+                Object.entries(brotherWords_1down).forEach(([word, data]) => {
+                    learnedWords.set(word, data);
+                });
+                
+                // 合併二上的字詞
+                Object.entries(brotherChars_2up).forEach(([char, data]) => {
+                    learnedCharacters.set(char, data);
+                });
+                
+                Object.entries(brotherWords_2up).forEach(([word, data]) => {
+                    learnedWords.set(word, data);
+                });
+                
+                console.log('✓ 載入哥哥預設資料:', learnedCharacters.size, '個字,', learnedWords.size, '個詞');
+                }
+            }
+        }
+
+        function resetFilterButtons() {
+            document.querySelectorAll('.button-filter').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('.button-filter')[0].classList.add('active');
+            document.querySelectorAll('.button-filter')[5].classList.add('active');
+        }
+
+        // ==================== History 相關函式 ====================
+        
+        function generateId() {
+            return Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        }
+
+        function loadHistory() {
+            const saved = localStorage.getItem(`learner_${currentLearner}_history`);
+            if (saved) {
+                try {
+                    return JSON.parse(saved);
+                } catch (e) {
+                    console.error('載入 History 失敗:', e);
+                    return [];
+                }
+            }
+            return [];
+        }
+
+        function saveHistory(history) {
+            try {
+                localStorage.setItem(`learner_${currentLearner}_history`, JSON.stringify(history));
+            } catch (e) {
+                console.error('儲存 History 失敗:', e);
+            }
+        }
+
+        function appendHistory(entry) {
+            const history = loadHistory();
+            
+            const fullEntry = {
+                id: generateId(),
+                ts: new Date().toISOString(),
+                learner: currentLearner,
+                ...entry
+            };
+            
+            history.push(fullEntry);
+            
+            if (history.length > HISTORY_MAX_SIZE) {
+                history.splice(0, history.length - HISTORY_MAX_SIZE);
+            }
+            
+            saveHistory(history);
+        }
+
+        // ==================== 資料載入/儲存 ====================
+
+        function loadData() {
+            console.log('📥 開始載入資料...');
+            
+            // 載入上次選擇的學習者
+            const savedLearner = localStorage.getItem('currentLearner');
+            if (savedLearner) {
+                currentLearner = savedLearner;
+                document.querySelectorAll('.learner-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.querySelector(`.learner-btn.${savedLearner}`).classList.add('active');
+                
+                const name = savedLearner === 'brother' ? '哥哥' : '妹妹';
+                document.getElementById('currentLearnerName').textContent = name;
+            }
+            
+            console.log(`當前學習者: ${currentLearner}`);
+            
+            loadCurrentLearnerData();
+            
+            console.log(`✓ 已載入 ${learnedCharacters.size} 個字, ${learnedWords.size} 個詞`);
+            
+            updateUI();
+            
+            console.log('✓ 資料載入完成');
+        }
+
+        function saveData() {
+            saveCurrentLearnerData();
+        }
+
+        function createNewItem() {
+            const now = Date.now();
+            return {
+                level: 0,
+                lastReview: now,
+                nextReview: now
+            };
+        }
+
+        function calculateNextReview(level) {
+            const now = Date.now();
+            if (level >= REVIEW_INTERVALS.length) {
+                return now + (60 * 24 * 60 * 60 * 1000);
+            }
+            const days = REVIEW_INTERVALS[level];
+            return now + (days * 24 * 60 * 60 * 1000);
+        }
+
+        function needsReview(item) {
+            return Date.now() >= item.nextReview;
+        }
+
+        // ==================== 匯出/匯入功能 ====================
+
+        function viewHistory() {
+            const history = loadHistory();
+            
+            if (history.length === 0) {
+                alert('目前沒有紀錄');
+                return;
+            }
+            
+            const recent = history.slice(-20).reverse();
+            const learnerName = currentLearner === 'brother' ? '哥哥' : '妹妹';
+            
+            let message = `${learnerName}的最近 20 筆變更紀錄：\n\n`;
+            recent.forEach((entry, index) => {
+                const time = new Date(entry.ts).toLocaleString('zh-TW');
+                const entityInfo = entry.key ? `${entry.entityType}: ${entry.key}` : entry.entityType;
+                
+                let metaInfo = '';
+                if (entry.meta) {
+                    if (entry.meta.fromWord) metaInfo = ` (來自詞: ${entry.meta.fromWord})`;
+                    if (entry.meta.filename) metaInfo = ` (檔案: ${entry.meta.filename})`;
+                    if (entry.meta.count) metaInfo = ` (數量: ${entry.meta.count})`;
+                }
+                
+                message += `${recent.length - index}. [${time}] ${entry.action} - ${entityInfo}${metaInfo}\n`;
+            });
+            
+            alert(message);
+        }
+
+        function exportData() {
+            // 儲存當前資料
+            saveCurrentLearnerData();
+            
+            const now = new Date();
+            const dateStr = now.toISOString().slice(0, 10);
+            const timeStr = now.toTimeString().slice(0, 5).replace(':', '');
+            const filename = `中文學習記錄_雙人版_${dateStr}_${timeStr}.json`;
+            
+            // 匯出兩個學習者的資料
+            const exportData = {
+                version: "3.0-dual",
+                exportedAt: now.toISOString(),
+                learners: {
+                    brother: {
+                        name: "哥哥",
+                        data: JSON.parse(localStorage.getItem('learner_brother_data') || '{"characters":{},"words":{}}'),
+                        history: JSON.parse(localStorage.getItem('learner_brother_history') || '[]')
+                    },
+                    sister: {
+                        name: "妹妹",
+                        data: JSON.parse(localStorage.getItem('learner_sister_data') || '{"characters":{},"words":{}}'),
+                        history: JSON.parse(localStorage.getItem('learner_sister_history') || '[]')
+                    }
+                },
+                currentLearner: currentLearner
+            };
+            
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            appendHistory({
+                action: 'EXPORT',
+                entityType: 'system',
+                key: null,
+                before: null,
+                after: null,
+                meta: { filename: filename }
+            });
+            
+            showNotification('兩人資料已匯出！');
+        }
+
+        function triggerImport() {
+            document.getElementById('importFile').click();
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    
+                    // 檢查是否為雙人版格式
+                    if (imported.version === "3.0-dual" && imported.learners) {
+                        // 匯入哥哥的資料
+                        if (imported.learners.brother) {
+                            localStorage.setItem('learner_brother_data', JSON.stringify(imported.learners.brother.data));
+                            if (imported.learners.brother.history) {
+                                localStorage.setItem('learner_brother_history', JSON.stringify(imported.learners.brother.history));
+                            }
+                        }
+                        
+                        // 匯入妹妹的資料
+                        if (imported.learners.sister) {
+                            localStorage.setItem('learner_sister_data', JSON.stringify(imported.learners.sister.data));
+                            if (imported.learners.sister.history) {
+                                localStorage.setItem('learner_sister_history', JSON.stringify(imported.learners.sister.history));
+                            }
+                        }
+                        
+                        // 恢復上次的學習者選擇
+                        if (imported.currentLearner) {
+                            switchLearner(imported.currentLearner);
+                        } else {
+                            loadCurrentLearnerData();
+                            updateUI();
+                        }
+                        
+                        showNotification('兩人資料匯入成功！');
+                    } else {
+                        // 舊格式或單人格式，匯入到當前學習者
+                        let dataToImport;
+                        if (imported.data) {
+                            dataToImport = imported.data;
+                        } else {
+                            dataToImport = imported;
+                        }
+                        
+                        learnedCharacters.clear();
+                        learnedWords.clear();
+                        
+                        if (dataToImport.characters) {
+                            if (Array.isArray(dataToImport.characters)) {
+                                dataToImport.characters.forEach(char => {
+                                    learnedCharacters.set(char, createNewItem());
+                                });
+                            } else {
+                                Object.entries(dataToImport.characters).forEach(([char, data]) => {
+                                    learnedCharacters.set(char, data);
+                                });
+                            }
+                        }
+                        
+                        if (dataToImport.words) {
+                            if (Array.isArray(dataToImport.words)) {
+                                dataToImport.words.forEach(word => {
+                                    learnedWords.set(word, createNewItem());
+                                });
+                            } else {
+                                Object.entries(dataToImport.words).forEach(([word, data]) => {
+                                    learnedWords.set(word, data);
+                                });
+                            }
+                        }
+                        
+                        if (imported.history && Array.isArray(imported.history)) {
+                            saveHistory(imported.history);
+                        }
+                        
+                        saveData();
+                        updateUI();
+                        
+                        const learnerName = currentLearner === 'brother' ? '哥哥' : '妹妹';
+                        showNotification(`已匯入到${learnerName}的記錄！`);
+                    }
+                    
+                    appendHistory({
+                        action: 'IMPORT',
+                        entityType: 'system',
+                        key: null,
+                        before: null,
+                        after: null,
+                        meta: { filename: file.name }
+                    });
+                    
+                    event.target.value = '';
+                    
+                } catch (error) {
+                    alert('匯入失敗：' + error.message);
+                    event.target.value = '';
+                }
+            };
+            
+            reader.readAsText(file);
+        }
+
+        // ==================== 字/詞管理 ====================
+
+        function addCharacter() {
+            const input = document.getElementById('charInput');
+            const chars = input.value.trim();
+            
+            if (!chars) {
+                alert('請輸入中文字！');
+                return;
+            }
+
+            const chineseChars = chars.match(/[\u4e00-\u9fa5]/g) || [];
+            
+            if (chineseChars.length === 0) {
+                alert('請輸入有效的中文字！');
+                return;
+            }
+
+            chineseChars.forEach(char => {
+                if (!learnedCharacters.has(char)) {
+                    const item = createNewItem();
+                    learnedCharacters.set(char, item);
+                    
+                    appendHistory({
+                        action: 'ADD_CHAR',
+                        entityType: 'char',
+                        key: char,
+                        before: null,
+                        after: item,
+                        meta: {}
+                    });
+                }
+            });
+            
+            input.value = '';
+            saveData();
+            updateUI();
+            updateSemesterCounts(); // 更新學期統計
+            
+            showNotification(`成功添加 ${chineseChars.length} 個字！`);
+        }
+
+        function addWord() {
+            const input = document.getElementById('wordInput');
+            const text = input.value.trim();
+            
+            if (!text) {
+                alert('請輸入詞彙！');
+                return;
+            }
+
+            const words = text.split(/[\s,，、]+/).filter(w => w.length > 0);
+            
+            if (words.length === 0) {
+                alert('請輸入有效的詞彙！');
+                return;
+            }
+
+            let addedCount = 0;
+            words.forEach(word => {
+                const cleanWord = word.match(/[\u4e00-\u9fa5]+/g);
+                if (cleanWord && cleanWord[0].length >= 2) {
+                    const finalWord = cleanWord[0];
+                    
+                    if (!learnedWords.has(finalWord)) {
+                        const wordItem = createNewItem();
+                        learnedWords.set(finalWord, wordItem);
+                        
+                        appendHistory({
+                            action: 'ADD_WORD',
+                            entityType: 'word',
+                            key: finalWord,
+                            before: null,
+                            after: wordItem,
+                            meta: {}
+                        });
+                    }
+                    
+                    finalWord.split('').forEach(char => {
+                        if (!learnedCharacters.has(char)) {
+                            const charItem = createNewItem();
+                            learnedCharacters.set(char, charItem);
+                            
+                            appendHistory({
+                                action: 'ADD_CHAR',
+                                entityType: 'char',
+                                key: char,
+                                before: null,
+                                after: charItem,
+                                meta: { source: 'word', fromWord: finalWord }
+                            });
+                        }
+                    });
+                    
+                    addedCount++;
+                }
+            });
+            
+            if (addedCount > 0) {
+                input.value = '';
+                saveData();
+                updateUI();
+                updateSemesterCounts(); // 更新學期統計
+                showNotification(`成功添加 ${addedCount} 個詞彙！`);
+            } else {
+                alert('請輸入有效的中文詞彙（至少兩個字）！');
+            }
+        }
+
+        function showBulkInput() {
+            document.getElementById('bulkModal').classList.add('active');
+        }
+
+        function closeBulkInput() {
+            document.getElementById('bulkModal').classList.remove('active');
+            document.getElementById('bulkInput').value = '';
+        }
+
+        function addBulkCharacters() {
+            const input = document.getElementById('bulkInput');
+            const text = input.value.trim();
+            
+            if (!text) {
+                alert('請輸入中文字！');
+                return;
+            }
+
+            const chineseChars = text.match(/[\u4e00-\u9fa5]/g) || [];
+            
+            if (chineseChars.length === 0) {
+                alert('請輸入有效的中文字！');
+                return;
+            }
+
+            const addedChars = [];
+            chineseChars.forEach(char => {
+                if (!learnedCharacters.has(char)) {
+                    const item = createNewItem();
+                    learnedCharacters.set(char, item);
+                    addedChars.push(char);
+                }
+            });
+            
+            if (addedChars.length > 0) {
+                appendHistory({
+                    action: 'ADD_BULK_CHARS',
+                    entityType: 'char',
+                    key: null,
+                    before: null,
+                    after: null,
+                    meta: { chars: addedChars, count: addedChars.length }
+                });
+            }
+            
+            saveData();
+            updateUI();
+            closeBulkInput();
+            
+            if (addedChars.length > 0) {
+                showNotification(`成功添加 ${addedChars.length} 個字！`);
+            } else {
+                showNotification('沒有新增新字（都已存在）');
+            }
+        }
+
+        // ==================== 複習功能 ====================
+
+        function startCharReview() {
+            const needReview = Array.from(learnedCharacters.entries())
+                .filter(([char, data]) => needsReview(data))
+                .map(([char]) => char);
+
+            if (needReview.length === 0) {
+                alert('目前沒有需要複習的字！🎉\n所有的字都還在記憶期內。');
+                return;
+            }
+            
+            reviewType = 'char';
+            reviewList = shuffleArray(needReview);
+            reviewIndex = 0;
+            showReview();
+            document.getElementById('reviewModal').classList.add('active');
+        }
+
+        function startWordReview() {
+            const needReview = Array.from(learnedWords.entries())
+                .filter(([word, data]) => needsReview(data))
+                .map(([word]) => word);
+
+            if (needReview.length === 0) {
+                alert('目前沒有需要複習的詞！🎉\n所有的詞都還在記憶期內。');
+                return;
+            }
+            
+            reviewType = 'word';
+            reviewList = shuffleArray(needReview);
+            reviewIndex = 0;
+            showReview();
+            document.getElementById('reviewModal').classList.add('active');
+        }
+
+        function showReview() {
+            if (reviewIndex >= reviewList.length) {
+                document.getElementById('reviewProgress').textContent = '🎉 今天的複習完成了！';
+                document.getElementById('reviewCharacter').textContent = '太棒了！';
+                document.getElementById('reviewHint').textContent = '繼續保持，明天見！';
+                return;
+            }
+
+            const current = reviewList[reviewIndex];
+            const total = reviewList.length;
+            const typeText = reviewType === 'char' ? '字' : '詞';
+            
+            const data = reviewType === 'char' 
+                ? learnedCharacters.get(current) 
+                : learnedWords.get(current);
+            
+            const level = data.level;
+            const levelText = level === 0 ? '新學' : `第${level}次複習`;
+            
+            document.getElementById('reviewProgress').textContent = `第 ${reviewIndex + 1} / ${total} 個${typeText} (${levelText})`;
+            document.getElementById('reviewCharacter').textContent = current;
+            document.getElementById('reviewHint').textContent = '認識這個字/詞嗎？';
+        }
+
+        function markCorrect() {
+            if (reviewIndex >= reviewList.length) {
+                return;
+            }
+
+            const current = reviewList[reviewIndex];
+            const dataMap = reviewType === 'char' ? learnedCharacters : learnedWords;
+            const data = dataMap.get(current);
+            
+            const before = { ...data };
+            
+            data.level = Math.min(data.level + 1, 4); // 最高 Level 4
+            data.lastReview = Date.now();
+            data.nextReview = calculateNextReview(data.level);
+            
+            dataMap.set(current, data);
+            
+            appendHistory({
+                action: 'REVIEW_CORRECT',
+                entityType: reviewType,
+                key: current,
+                before: before,
+                after: { ...data },
+                meta: {}
+            });
+            
+            saveData();
+            
+            const encouragement = ['太棒了！', '很好！', '真厲害！', '繼續加油！', '答對了！'][Math.floor(Math.random() * 5)];
+            document.getElementById('reviewHint').textContent = `✓ ${encouragement}`;
+            
+            setTimeout(() => {
+                reviewIndex++;
+                showReview();
+                updateUI();
+            }, 800);
+        }
+
+        function markIncorrect() {
+            if (reviewIndex >= reviewList.length) {
+                return;
+            }
+
+            const current = reviewList[reviewIndex];
+            const dataMap = reviewType === 'char' ? learnedCharacters : learnedWords;
+            const data = dataMap.get(current);
+            
+            const before = { ...data };
+            
+            data.level = Math.max(data.level - 1, 0);
+            data.lastReview = Date.now();
+            data.nextReview = calculateNextReview(data.level);
+            
+            dataMap.set(current, data);
+            
+            appendHistory({
+                action: 'REVIEW_INCORRECT',
+                entityType: reviewType,
+                key: current,
+                before: before,
+                after: { ...data },
+                meta: {}
+            });
+            
+            saveData();
+            
+            document.getElementById('reviewHint').textContent = '✗ 沒關係，多練習就會記住了！';
+            
+            setTimeout(() => {
+                reviewIndex++;
+                showReview();
+                updateUI();
+            }, 1000);
+        }
+
+        function endReview() {
+            document.getElementById('reviewModal').classList.remove('active');
+            reviewList = [];
+            reviewIndex = 0;
+            updateUI();
+        }
+
+        // ==================== 放大顯示與調整 ====================
+
+        let currentEnlargedItem = null;
+        let currentEnlargedType = null;
+
+        function showEnlarged(text) {
+            let data;
+            if (learnedCharacters.has(text)) {
+                currentEnlargedType = 'char';
+                data = learnedCharacters.get(text);
+                document.getElementById('enlargeLevel').textContent = `Level ${data.level}`;
+                updateLevelButtons(data.level);
+            } else if (learnedWords.has(text)) {
+                currentEnlargedType = 'word';
+                data = learnedWords.get(text);
+                document.getElementById('enlargeLevel').textContent = `Level ${data.level}`;
+                updateLevelButtons(data.level);
+            }
+            
+            // 顯示來源資訊
+            const sourceElement = document.getElementById('enlargeSource');
+            const sourceTextElement = document.getElementById('enlargeSourceText');
+            if (data && data.source) {
+                // source 格式：'1上-1' 表示一上第1課
+                const parts = data.source.split('-');
+                if (parts.length === 2) {
+                    sourceTextElement.textContent = `${parts[0]}第${parts[1]}課`;
+                } else {
+                    // 向下相容舊格式
+                    sourceTextElement.textContent = `一上第${data.source}課`;
+                }
+                sourceElement.style.display = 'flex';
+            } else {
+                sourceElement.style.display = 'none';
+            }
+            
+            currentEnlargedItem = text;
+            const charElement = document.getElementById('enlargeCharacter');
+            charElement.textContent = text;
+            
+            let initialSize;
+            if (text.length === 1) {
+                initialSize = 10;
+                charElement.classList.remove('multi-char');
+            } else if (text.length === 2) {
+                initialSize = 8;
+                charElement.classList.add('multi-char');
+            } else {
+                initialSize = 6;
+                charElement.classList.add('multi-char');
+            }
+            
+            document.getElementById('fontSizeSlider').value = initialSize;
+            charElement.style.fontSize = initialSize + 'rem';
+            
+            document.getElementById('enlargeModal').classList.add('active');
+        }
+
+        function updateLevelButtons(currentLevel) {
+            // 更新 Level 按鈕的選中狀態
+            const modal = document.getElementById('enlargeModal');
+            const buttons = modal.querySelectorAll('.button-filter[onclick^="setLevel"]');
+            buttons.forEach((btn, index) => {
+                if (index === currentLevel) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        function adjustFontSize(value) {
+            const charElement = document.getElementById('enlargeCharacter');
+            charElement.style.fontSize = value + 'rem';
+        }
+
+        function setLevel(newLevel) {
+            if (!currentEnlargedItem) return;
+            
+            const dataMap = currentEnlargedType === 'char' ? learnedCharacters : learnedWords;
+            const data = dataMap.get(currentEnlargedItem);
+            
+            if (!data) return;
+            
+            const before = { ...data };
+            
+            // 如果點擊相同的 Level，不做任何事
+            if (newLevel === data.level) {
+                return;
+            }
+            
+            // 限制 Level 範圍為 0-4
+            newLevel = Math.max(0, Math.min(4, newLevel));
+            
+            data.level = newLevel;
+            data.lastReview = Date.now();
+            data.nextReview = calculateNextReview(newLevel);
+            
+            dataMap.set(currentEnlargedItem, data);
+            
+            appendHistory({
+                action: 'SET_LEVEL',
+                entityType: currentEnlargedType,
+                key: currentEnlargedItem,
+                before: before,
+                after: { ...data },
+                meta: { newLevel: newLevel }
+            });
+            
+            saveData();
+            
+            document.getElementById('enlargeLevel').textContent = `Level ${newLevel}`;
+            updateLevelButtons(newLevel);
+            updateUI();
+            
+            const levelNames = ['新學', '認識', '熟悉', '掌握', '精通'];
+            showNotification(`已設定為 ${levelNames[newLevel]} (Level ${newLevel})`);
+        }
+
+        function deleteFromEnlarge() {
+            if (!currentEnlargedItem || !currentEnlargedType) {
+                alert('無法刪除：未選擇項目');
+                return;
+            }
+            
+            const itemType = currentEnlargedType === 'char' ? '字' : '詞';
+            const confirmMessage = `確定要刪除${itemType}「${currentEnlargedItem}」嗎？\n\n刪除後將無法復原。`;
+            
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+            
+            try {
+                const dataMap = currentEnlargedType === 'char' ? learnedCharacters : learnedWords;
+                const beforeData = dataMap.get(currentEnlargedItem);
+                const before = beforeData ? { ...beforeData } : null;
+                
+                const deleted = dataMap.delete(currentEnlargedItem);
+                
+                if (!deleted) {
+                    alert('刪除失敗：項目不存在');
+                    return;
+                }
+                
+                appendHistory({
+                    action: currentEnlargedType === 'char' ? 'DELETE_CHAR' : 'DELETE_WORD',
+                    entityType: currentEnlargedType,
+                    key: currentEnlargedItem,
+                    before: before,
+                    after: null,
+                    meta: {}
+                });
+                
+                saveData();
+                
+                const itemName = currentEnlargedItem;
+                closeEnlarge();
+                
+                updateUI();
+                updateSemesterCounts(); // 更新學期統計
+                
+                setTimeout(() => {
+                    showNotification(`✓ 已刪除「${itemName}」`);
+                }, 100);
+                
+            } catch (error) {
+                alert('刪除時發生錯誤：' + error.message);
+            }
+        }
+
+        function editSource() {
+            if (!currentEnlargedItem) return;
+            
+            const dataMap = currentEnlargedType === 'char' ? learnedCharacters : learnedWords;
+            const data = dataMap.get(currentEnlargedItem);
+            if (!data) return;
+            
+            // 解析當前來源
+            let currentSemester = '1上';
+            let currentLesson = '1';
+            if (data.source) {
+                const parts = data.source.split('-');
+                if (parts.length === 2) {
+                    currentSemester = parts[0];
+                    currentLesson = parts[1];
+                } else {
+                    currentLesson = data.source;
+                }
+            }
+            
+            // 彈出輸入框
+            const newSource = prompt(
+                `修改來源\n\n格式：學期-課號\n例如：1上-1、1下-3、2上-5\n\n當前：${currentSemester}-${currentLesson}`,
+                `${currentSemester}-${currentLesson}`
+            );
+            
+            if (newSource === null) return; // 取消
+            
+            // 驗證格式
+            const trimmed = newSource.trim();
+            if (!trimmed) {
+                alert('來源不能為空');
+                return;
+            }
+            
+            const parts = trimmed.split('-');
+            if (parts.length !== 2) {
+                alert('格式錯誤！請使用：學期-課號\n例如：1上-1');
+                return;
+            }
+            
+            // 驗證學期格式（1上、1下、2上、2下等）
+            if (!/^[1-6][上下]$/.test(parts[0])) {
+                alert('學期格式錯誤！應為：1上、1下、2上、2下等');
+                return;
+            }
+            
+            // 驗證課號（數字）
+            if (!/^\d+$/.test(parts[1])) {
+                alert('課號應為數字');
+                return;
+            }
+            
+            // 更新來源
+            data.source = trimmed;
+            saveData();
+            
+            // 更新顯示
+            const sourceTextElement = document.getElementById('enlargeSourceText');
+            sourceTextElement.textContent = `${parts[0]}第${parts[1]}課`;
+            
+            showNotification(`✅ 已更新來源為：${parts[0]}第${parts[1]}課`);
+        }
+
+        function closeEnlarge() {
+            document.getElementById('enlargeModal').classList.remove('active');
+            currentEnlargedItem = null;
+            currentEnlargedType = null;
+        }
+
+        // ==================== 篩選功能 ====================
+
+        function filterChars(level, btn) {
+            // 如果點擊「全部」
+            if (level === 'all') {
+                if (charFilter.has('all')) {
+                    // 已經是全部，不做任何事
+                    return;
+                } else {
+                    // 切換到全部，清除其他選擇
+                    charFilter.clear();
+                    charFilter.add('all');
+                }
+            } else {
+                // 點擊具體的 Level
+                if (charFilter.has('all')) {
+                    // 如果當前是全部，切換到只選這個 Level
+                    charFilter.clear();
+                    charFilter.add(level);
+                } else {
+                    // 複選模式
+                    if (charFilter.has(level)) {
+                        // 取消選擇
+                        charFilter.delete(level);
+                        // 如果全部取消了，自動切回「全部」
+                        if (charFilter.size === 0) {
+                            charFilter.add('all');
+                        }
+                    } else {
+                        // 新增選擇
+                        charFilter.add(level);
+                    }
+                }
+            }
+            
+            updateCharsDisplay();
+            
+            // 更新按鈕狀態
+            const container = btn.parentElement;
+            container.querySelectorAll('.button-filter').forEach(b => {
+                const btnLevel = b.onclick.toString().match(/filterChars\(([^,]+),/)[1].replace(/['"]/g, '');
+                // 處理數字和字串的比較
+                const btnLevelNum = btnLevel === 'all' ? 'all' : parseInt(btnLevel);
+                if (charFilter.has(btnLevelNum) || (btnLevelNum === 'all' && charFilter.has('all'))) {
+                    b.classList.add('active');
+                } else {
+                    b.classList.remove('active');
+                }
+            });
+        }
+
+        function filterCharsBySemester(semester, btn) {
+            // 如果點擊「全部」
+            if (semester === 'all') {
+                if (charSemesterFilter.has('all')) {
+                    // 已經是全部，不做任何事
+                    return;
+                } else {
+                    // 切換到全部，清除其他選擇
+                    charSemesterFilter.clear();
+                    charSemesterFilter.add('all');
+                }
+            } else {
+                // 點擊具體的學期
+                if (charSemesterFilter.has('all')) {
+                    // 如果當前是全部，切換到只選這個學期
+                    charSemesterFilter.clear();
+                    charSemesterFilter.add(semester);
+                } else {
+                    // 複選模式
+                    if (charSemesterFilter.has(semester)) {
+                        // 取消選擇
+                        charSemesterFilter.delete(semester);
+                        // 如果全部取消了，自動切回「全部」
+                        if (charSemesterFilter.size === 0) {
+                            charSemesterFilter.add('all');
+                        }
+                    } else {
+                        // 新增選擇
+                        charSemesterFilter.add(semester);
+                    }
+                }
+            }
+            
+            updateCharsDisplay();
+            
+            // 更新課別選項（根據新選擇的學期）
+            updateLessonOptions();
+            
+            // 更新按鈕狀態
+            const container = btn.parentElement;
+            container.querySelectorAll('.button-filter').forEach(b => {
+                const btnSemester = b.onclick.toString().match(/filterCharsBySemester\(['"]([^'"]+)['"]/)[1];
+                if (charSemesterFilter.has(btnSemester)) {
+                    b.classList.add('active');
+                } else {
+                    b.classList.remove('active');
+                }
+            });
+        }
+
+        function filterWords(level, btn) {
+            // 如果點擊「全部」
+            if (level === 'all') {
+                if (wordFilter.has('all')) {
+                    // 已經是全部，不做任何事
+                    return;
+                } else {
+                    // 切換到全部，清除其他選擇
+                    wordFilter.clear();
+                    wordFilter.add('all');
+                }
+            } else {
+                // 點擊具體的 Level
+                if (wordFilter.has('all')) {
+                    // 如果當前是全部，切換到只選這個 Level
+                    wordFilter.clear();
+                    wordFilter.add(level);
+                } else {
+                    // 複選模式
+                    if (wordFilter.has(level)) {
+                        // 取消選擇
+                        wordFilter.delete(level);
+                        // 如果全部取消了，自動切回「全部」
+                        if (wordFilter.size === 0) {
+                            wordFilter.add('all');
+                        }
+                    } else {
+                        // 新增選擇
+                        wordFilter.add(level);
+                    }
+                }
+            }
+            
+            updateWordsDisplay();
+            
+            // 更新按鈕狀態
+            const container = btn.parentElement;
+            container.querySelectorAll('.button-filter').forEach(b => {
+                const btnLevel = b.onclick.toString().match(/filterWords\(([^,]+),/)[1].replace(/['"]/g, '');
+                // 處理數字和字串的比較
+                const btnLevelNum = btnLevel === 'all' ? 'all' : parseInt(btnLevel);
+                if (wordFilter.has(btnLevelNum) || (btnLevelNum === 'all' && wordFilter.has('all'))) {
+                    b.classList.add('active');
+                } else {
+                    b.classList.remove('active');
+                }
+            });
+        }
+
+        function filterWordsBySemester(semester, btn) {
+            // 如果點擊「全部」
+            if (semester === 'all') {
+                if (wordSemesterFilter.has('all')) {
+                    // 已經是全部，不做任何事
+                    return;
+                } else {
+                    // 切換到全部，清除其他選擇
+                    wordSemesterFilter.clear();
+                    wordSemesterFilter.add('all');
+                }
+            } else {
+                // 點擊具體的學期
+                if (wordSemesterFilter.has('all')) {
+                    // 如果當前是全部，切換到只選這個學期
+                    wordSemesterFilter.clear();
+                    wordSemesterFilter.add(semester);
+                } else {
+                    // 複選模式
+                    if (wordSemesterFilter.has(semester)) {
+                        // 取消選擇
+                        wordSemesterFilter.delete(semester);
+                        // 如果全部取消了，自動切回「全部」
+                        if (wordSemesterFilter.size === 0) {
+                            wordSemesterFilter.add('all');
+                        }
+                    } else {
+                        // 新增選擇
+                        wordSemesterFilter.add(semester);
+                    }
+                }
+            }
+            
+            updateWordsDisplay();
+            
+            // 更新課別選項（根據新選擇的學期）
+            updateLessonOptions();
+            
+            // 更新按鈕狀態
+            const container = btn.parentElement;
+            container.querySelectorAll('.button-filter').forEach(b => {
+                const btnSemester = b.onclick.toString().match(/filterWordsBySemester\(['"]([^'"]+)['"]/)[1];
+                if (wordSemesterFilter.has(btnSemester)) {
+                    b.classList.add('active');
+                } else {
+                    b.classList.remove('active');
+                }
+            });
+        }
+
+        // ==================== 學期統計功能 ====================
+        
+        function updateSemesterCounts() {
+            // 計算各學期的字詞數量
+            const charCounts = { 'all': 0, '1上': 0, '1下': 0, '2上': 0, '2下': 0 };
+            const wordCounts = { 'all': 0, '1上': 0, '1下': 0, '2上': 0, '2下': 0 };
+            
+            // 統計字
+            learnedCharacters.forEach((data, char) => {
+                charCounts['all']++;
+                if (data.source) {
+                    const semester = data.source.split('-')[0];
+                    if (charCounts[semester] !== undefined) {
+                        charCounts[semester]++;
+                    }
+                }
+            });
+            
+            // 統計詞
+            learnedWords.forEach((data, word) => {
+                wordCounts['all']++;
+                if (data.source) {
+                    const semester = data.source.split('-')[0];
+                    if (wordCounts[semester] !== undefined) {
+                        wordCounts[semester]++;
+                    }
+                }
+            });
+            
+            // 更新字的統計顯示
+            Object.keys(charCounts).forEach(semester => {
+                const el = document.getElementById(`semCharCount-${semester}`);
+                if (el) {
+                    el.textContent = charCounts[semester];
+                }
+            });
+            
+            // 更新詞的統計顯示
+            Object.keys(wordCounts).forEach(semester => {
+                const el = document.getElementById(`semWordCount-${semester}`);
+                if (el) {
+                    el.textContent = wordCounts[semester];
+                }
+            });
+        }
+
+        // ==================== 課別篩選功能 ====================
+        
+        function updateLessonOptions() {
+            // 根據當前選中的學期，動態生成課別選項
+            const lessonsForChar = new Set();
+            const lessonsForWord = new Set();
+            
+            // 收集字的來源（使用 charSemesterFilter）
+            learnedCharacters.forEach((data, char) => {
+                if (data.source) {
+                    // 如果有選擇特定學期，只顯示該學期的課別
+                    if (!charSemesterFilter.has('all')) {
+                        for (let semester of charSemesterFilter) {
+                            if (data.source.startsWith(semester)) {
+                                lessonsForChar.add(data.source);
+                                break;
+                            }
+                        }
+                    } else {
+                        lessonsForChar.add(data.source);
+                    }
+                }
+            });
+            
+            // 收集詞的來源（使用 wordSemesterFilter）
+            learnedWords.forEach((data, word) => {
+                if (data.source) {
+                    // 如果有選擇特定學期，只顯示該學期的課別
+                    if (!wordSemesterFilter.has('all')) {
+                        for (let semester of wordSemesterFilter) {
+                            if (data.source.startsWith(semester)) {
+                                lessonsForWord.add(data.source);
+                                break;
+                            }
+                        }
+                    } else {
+                        lessonsForWord.add(data.source);
+                    }
+                }
+            });
+            
+            // 排序課別（先按學期，再按課號）
+            const sortLessons = (lessons) => {
+                return Array.from(lessons).sort((a, b) => {
+                    const [semA, lesA] = a.split('-');
+                    const [semB, lesB] = b.split('-');
+                    if (semA !== semB) {
+                        // 學期排序：1上 < 1下 < 2上 < 2下
+                        const orderA = parseInt(semA[0]) * 2 + (semA[1] === '下' ? 1 : 0);
+                        const orderB = parseInt(semB[0]) * 2 + (semB[1] === '下' ? 1 : 0);
+                        return orderA - orderB;
+                    }
+                    return parseInt(lesA) - parseInt(lesB);
+                });
+            };
+            
+            const sortedLessonsChar = sortLessons(lessonsForChar);
+            const sortedLessonsWord = sortLessons(lessonsForWord);
+            
+            // 更新字的下拉選單
+            const lessonSelect = document.getElementById('lessonSelect');
+            const currentCharValue = lessonSelect.value;
+            lessonSelect.innerHTML = '<option value="all">全部課別</option>';
+            let hasCurrentValue = false;
+            sortedLessonsChar.forEach(lesson => {
+                const [sem, les] = lesson.split('-');
+                const option = document.createElement('option');
+                option.value = lesson;
+                option.textContent = `${sem}第${les}課`;
+                lessonSelect.appendChild(option);
+                if (lesson === currentCharValue) {
+                    hasCurrentValue = true;
+                }
+            });
+            // 如果當前選擇的課別不在新列表中，重置為全部
+            if (!hasCurrentValue && currentCharValue !== 'all') {
+                lessonSelect.value = 'all';
+                charLessonFilter = 'all';
+            } else {
+                lessonSelect.value = currentCharValue;
+            }
+            
+            // 更新詞的下拉選單
+            const lessonSelectWord = document.getElementById('lessonSelectWord');
+            const currentWordValue = lessonSelectWord.value;
+            lessonSelectWord.innerHTML = '<option value="all">全部課別</option>';
+            let hasCurrentWordValue = false;
+            sortedLessonsWord.forEach(lesson => {
+                const [sem, les] = lesson.split('-');
+                const option = document.createElement('option');
+                option.value = lesson;
+                option.textContent = `${sem}第${les}課`;
+                lessonSelectWord.appendChild(option);
+                if (lesson === currentWordValue) {
+                    hasCurrentWordValue = true;
+                }
+            });
+            // 如果當前選擇的課別不在新列表中，重置為全部
+            if (!hasCurrentWordValue && currentWordValue !== 'all') {
+                lessonSelectWord.value = 'all';
+                wordLessonFilter = 'all';
+            } else {
+                lessonSelectWord.value = currentWordValue;
+            }
+        }
+        
+        function applyLessonFilter(type) {
+            if (type === 'char') {
+                const select = document.getElementById('lessonSelect');
+                charLessonFilter = select.value;
+                updateCharsDisplay();
+            } else {
+                const select = document.getElementById('lessonSelectWord');
+                wordLessonFilter = select.value;
+                updateWordsDisplay();
+            }
+        }
+        
+        function clearLessonFilter(type) {
+            if (type === 'char') {
+                charLessonFilter = 'all';
+                document.getElementById('lessonSelect').value = 'all';
+                updateCharsDisplay();
+            } else {
+                wordLessonFilter = 'all';
+                document.getElementById('lessonSelectWord').value = 'all';
+                updateWordsDisplay();
+            }
+        }
+
+        function matchesFilter(data, filterSet) {
+            // 如果選擇了「全部」，顯示所有
+            if (filterSet.has('all')) return true;
+            
+            // 檢查是否匹配任一選擇的 Level
+            for (let level of filterSet) {
+                if (data.level === level) return true;
+            }
+            
+            return false;
+        }
+
+        // ==================== UI 更新 ====================
+
+        function updateUI() {
+            updateCharsDisplay();
+            updateWordsDisplay();
+            updateStats();
+        }
+
+        function updateCharsDisplay() {
+            const chars = Array.from(learnedCharacters.entries());
+            const container = document.getElementById('learnedChars');
+            
+            if (chars.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📚</div>
+                        <p>還沒有記錄，開始添加吧！</p>
+                    </div>
+                `;
+            } else {
+                // 先依 Level 篩選
+                let filtered = chars.filter(([char, data]) => matchesFilter(data, charFilter));
+                
+                // 再依學期篩選
+                if (!charSemesterFilter.has('all')) {
+                    filtered = filtered.filter(([char, data]) => {
+                        if (!data.source) return false;
+                        // 檢查是否匹配任一選中的學期
+                        for (let semester of charSemesterFilter) {
+                            if (data.source.startsWith(semester)) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    });
+                }
+                
+                // 再依課別篩選
+                if (charLessonFilter !== 'all') {
+                    filtered = filtered.filter(([char, data]) => {
+                        return data.source === charLessonFilter;
+                    });
+                }
+                
+                if (filtered.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🔍</div>
+                            <p>這個篩選條件沒有字</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const sorted = filtered.sort((a, b) => {
+                    const levelDiff = a[1].level - b[1].level;
+                    if (levelDiff !== 0) return levelDiff;
+                    return a[0].localeCompare(b[0]);
+                });
+                
+                container.innerHTML = sorted.map(([char, data]) => {
+                    const mastered = data.level >= 3;
+                    const masteryClass = mastered ? 'mastered' : '';
+                    const indicator = data.level > 0 ? `<div class="mastery-indicator">${data.level}</div>` : '';
+                    
+                    return `
+                        <div class="char-badge ${masteryClass}">
+                            ${indicator}
+                            <span class="char-text" data-char="${char}">${char}</span>
+                        </div>
+                    `;
+                }).join('');
+                
+                container.querySelectorAll('.char-text').forEach(span => {
+                    span.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        showEnlarged(this.getAttribute('data-char'));
+                    });
+                });
+            }
+        }
+
+        function updateWordsDisplay() {
+            const words = Array.from(learnedWords.entries());
+            const container = document.getElementById('wordGrid');
+            
+            if (words.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🌟</div>
+                        <p>輸入詞彙開始記錄</p>
+                    </div>
+                `;
+            } else {
+                // 先依 Level 篩選
+                let filtered = words.filter(([word, data]) => matchesFilter(data, wordFilter));
+                
+                // 再依學期篩選
+                if (!wordSemesterFilter.has('all')) {
+                    filtered = filtered.filter(([word, data]) => {
+                        if (!data.source) return false;
+                        // 檢查是否匹配任一選中的學期
+                        for (let semester of wordSemesterFilter) {
+                            if (data.source.startsWith(semester)) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    });
+                }
+                
+                // 再依課別篩選
+                if (wordLessonFilter !== 'all') {
+                    filtered = filtered.filter(([word, data]) => {
+                        return data.source === wordLessonFilter;
+                    });
+                }
+                
+                if (filtered.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🔍</div>
+                            <p>這個篩選條件沒有詞</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const sorted = filtered.sort((a, b) => {
+                    const levelDiff = a[1].level - b[1].level;
+                    if (levelDiff !== 0) return levelDiff;
+                    return a[0].localeCompare(b[0]);
+                });
+                
+                container.innerHTML = sorted.map(([word, data], index) => {
+                    const mastered = data.level >= 3;
+                    const masteryClass = mastered ? 'mastered' : '';
+                    const indicator = data.level > 0 ? `<div class="mastery-indicator">${data.level}</div>` : '';
+                    
+                    return `
+                        <div class="word-card ${masteryClass}" style="animation-delay: ${index * 0.05}s">
+                            ${indicator}
+                            <span class="word-chinese" data-word="${word}">${word}</span>
+                        </div>
+                    `;
+                }).join('');
+                
+                container.querySelectorAll('.word-chinese').forEach(span => {
+                    span.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        showEnlarged(this.getAttribute('data-word'));
+                    });
+                });
+            }
+        }
+
+        function updateStats() {
+            const totalChars = learnedCharacters.size;
+            const reviewChars = Array.from(learnedCharacters.values())
+                .filter(data => needsReview(data)).length;
+            const masteredChars = Array.from(learnedCharacters.values())
+                .filter(data => data.level >= 3).length;
+            
+            document.getElementById('totalChars').textContent = totalChars;
+            document.getElementById('reviewChars').textContent = reviewChars;
+            document.getElementById('masteredChars').textContent = masteredChars;
+            
+            const totalWords = learnedWords.size;
+            const reviewWords = Array.from(learnedWords.values())
+                .filter(data => needsReview(data)).length;
+            const masteredWords = Array.from(learnedWords.values())
+                .filter(data => data.level >= 3).length;
+            
+            document.getElementById('totalWords').textContent = totalWords;
+            document.getElementById('reviewWords').textContent = reviewWords;
+            document.getElementById('masteredWords').textContent = masteredWords;
+        }
+
+        // ==================== 工具函式 ====================
+
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, var(--success) 0%, var(--primary) 100%);
+                color: white;
+                padding: 15px 25px;
+                border-radius: 12px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+                z-index: 2000;
+                animation: slideInRight 0.3s ease;
+            `;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 2000);
+        }
+
+        // ==================== 鍵盤快捷鍵 ====================
+
+        document.getElementById('charInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addCharacter();
+            }
+        });
+
+        document.getElementById('wordInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addWord();
+            }
+        });
+
+        document.getElementById('bulkInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                addBulkCharacters();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            const reviewModal = document.getElementById('reviewModal');
+            const enlargeModal = document.getElementById('enlargeModal');
+            
+            if (reviewModal.classList.contains('active')) {
+                if (e.key === 'ArrowRight' || e.key === 'o' || e.key === 'O') {
+                    e.preventDefault();
+                    markCorrect();
+                } else if (e.key === 'ArrowLeft' || e.key === 'x' || e.key === 'X') {
+                    e.preventDefault();
+                    markIncorrect();
+                } else if (e.key === 'Escape') {
+                    endReview();
+                }
+            } else if (enlargeModal.classList.contains('active')) {
+                if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    closeEnlarge();
+                }
+            }
+        });
+
+        // ==================== 初始化 ====================
+
+        // 初始化學期篩選和課別篩選顯示（只有哥哥才顯示）
+        const semesterFilterChar = document.getElementById('semesterFilterChar');
+        const semesterFilterWord = document.getElementById('semesterFilterWord');
+        const lessonFilterChar = document.getElementById('lessonFilterChar');
+        const lessonFilterWord = document.getElementById('lessonFilterWord');
+        if (currentLearner === 'brother') {
+            semesterFilterChar.style.display = 'block';
+            semesterFilterWord.style.display = 'block';
+            lessonFilterChar.style.display = 'block';
+            lessonFilterWord.style.display = 'block';
+        } else {
+            semesterFilterChar.style.display = 'none';
+            semesterFilterWord.style.display = 'none';
+            lessonFilterChar.style.display = 'none';
+            lessonFilterWord.style.display = 'none';
+        }
+
+        // ==================== Firebase 認證與同步 ====================
+        
+        function signInWithGoogle() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).catch(error => {
+                console.error('登入失敗:', error);
+                alert('登入失敗：' + error.message);
+            });
+        }
+        
+        function signOut() {
+            auth.signOut().catch(error => {
+                console.error('登出失敗:', error);
+            });
+        }
+        
+        // 監聽認證狀態
+        auth.onAuthStateChanged(async (user) => {
+            currentUser = user;
+            if (user) {
+                document.getElementById('loginSection')?.classList.add('hidden');
+                document.getElementById('appContent')?.classList.remove('hidden');
+                document.getElementById('userEmail').textContent = user.email;
+                await loadFromFirebase();
+            } else {
+                document.getElementById('loginSection')?.classList.remove('hidden');
+                document.getElementById('appContent')?.classList.add('hidden');
+            }
+        });
+        
+        // 從 Firebase 載入
+        async function loadFromFirebase() {
+            if (!currentUser) return;
+            
+            try {
+                const doc = await db.collection('users').doc(currentUser.uid).get();
+                
+                if (doc.exists) {
+                    const data = doc.data()[currentLearner];
+                    if (data && data.characters && Object.keys(data.characters).length > 0) {
+                        // 雲端有資料，載入它
+                        learnedCharacters = new Map(Object.entries(data.characters));
+                        learnedWords = new Map(Object.entries(data.words || {}));
+                        console.log('✓ 從雲端載入資料');
+                        
+                        // 如果是妹妹，載入相近字
+                        if (currentLearner === 'sister' && data.similarPairs) {
+                            similarCharPairs = data.similarPairs;
+                            localStorage.setItem('sister_similarPairs', JSON.stringify(similarCharPairs));
+                            console.log('✓ 從雲端載入相近字:', similarCharPairs.length, '組');
+                        }
+                        
+                        updateUI();
+                        if (currentLearner === 'brother') {
+                            updateLessonOptions();
+                            updateSemesterCounts();
+                        }
+                        initSemesterFilters();
+                        return;
+                    }
+                }
+                
+                // 沒有雲端資料，載入預設資料
+                console.log('⚠ 雲端沒有資料，載入預設資料');
+                loadData();
+                
+                // 載入完預設資料後自動儲存到雲端
+                await saveToFirebase();
+                console.log('✓ 已將預設資料儲存到雲端');
+                
+                // 初始化學期篩選顯示
+                initSemesterFilters();
+                
+            } catch (error) {
+                console.error('載入失敗:', error);
+                // 載入失敗時也要載入預設資料
+                loadData();
+                initSemesterFilters();
+            }
+        }
+        
+        // 儲存到 Firebase
+        async function saveToFirebase() {
+            if (!currentUser) return;
+            try {
+                const dataToSave = {
+                    characters: Object.fromEntries(learnedCharacters),
+                    words: Object.fromEntries(learnedWords)
+                };
+                
+                // 如果是妹妹，也儲存相近字
+                if (currentLearner === 'sister') {
+                    dataToSave.similarPairs = similarCharPairs;
+                }
+                
+                await db.collection('users').doc(currentUser.uid).set({
+                    [currentLearner]: dataToSave
+                }, { merge: true });
+            } catch (error) {
+                console.error('儲存失敗:', error);
+            }
+        }
+        
+        // 修改原有的 saveData 函式
+        const _originalSaveCurrentLearnerData = saveCurrentLearnerData;
+        saveCurrentLearnerData = function() {
+            _originalSaveCurrentLearnerData();
+            saveToFirebase();
+        };
+
+        // 初始化學期篩選顯示（哥哥顯示，妹妹隱藏）
+        function initSemesterFilters() {
+            const semesterFilterChar = document.getElementById('semesterFilterChar');
+            const semesterFilterWord = document.getElementById('semesterFilterWord');
+            const lessonFilterChar = document.getElementById('lessonFilterChar');
+            const lessonFilterWord = document.getElementById('lessonFilterWord');
+            
+            if (currentLearner === 'brother') {
+                semesterFilterChar.style.display = 'block';
+                semesterFilterWord.style.display = 'block';
+                lessonFilterChar.style.display = 'block';
+                lessonFilterWord.style.display = 'block';
+                updateLessonOptions();
+                updateSemesterCounts();
+            } else {
+                semesterFilterChar.style.display = 'none';
+                semesterFilterWord.style.display = 'none';
+                lessonFilterChar.style.display = 'none';
+                lessonFilterWord.style.display = 'none';
+            }
+        }
+        
+        // Firebase 認證後初始化
+        setTimeout(() => {
+            initSemesterFilters();
+        }, 1000);
+        
+        // ==================== 相近字辨識功能（妹妹專屬）====================
+        
+        // 管理相近字
+        function manageSimilarChars() {
+            loadSimilarPairs();
+            renderSimilarPairs();
+            document.getElementById('manageSimilarModal').classList.add('active');
+        }
+        
+        function closeSimilarManage() {
+            document.getElementById('manageSimilarModal').classList.remove('active');
+        }
+        
+        // 新增相近字組
+        function addSimilarPair() {
+            const char1 = document.getElementById('similarChar1').value.trim();
+            const char2 = document.getElementById('similarChar2').value.trim();
+            
+            if (!char1 || !char2) {
+                alert('請輸入兩個字');
+                return;
+            }
+            
+            if (char1 === char2) {
+                alert('兩個字不能相同');
+                return;
+            }
+            
+            // 檢查是否已存在
+            const exists = similarCharPairs.some(pair => 
+                (pair.char1 === char1 && pair.char2 === char2) ||
+                (pair.char1 === char2 && pair.char2 === char1)
+            );
+            
+            if (exists) {
+                alert('這組相近字已經存在');
+                return;
+            }
+            
+            similarCharPairs.push({char1, char2});
+            saveSimilarPairs();
+            renderSimilarPairs();
+            
+            // 清空輸入
+            document.getElementById('similarChar1').value = '';
+            document.getElementById('similarChar2').value = '';
+            
+            showNotification(`✅ 已新增：${char1} vs ${char2}`);
+        }
+        
+        // 刪除相近字組
+        function deleteSimilarPair(index) {
+            if (!confirm('確定要刪除這組相近字？')) return;
+            
+            const pair = similarCharPairs[index];
+            similarCharPairs.splice(index, 1);
+            saveSimilarPairs();
+            renderSimilarPairs();
+            
+            showNotification(`✅ 已刪除：${pair.char1} vs ${pair.char2}`);
+        }
+        
+        // 渲染相近字列表
+        function renderSimilarPairs() {
+            const container = document.getElementById('pairsContainer');
+            
+            if (similarCharPairs.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">尚未建立任何相近字組</p>';
+                return;
+            }
+            
+            let html = '';
+            similarCharPairs.forEach((pair, index) => {
+                html += `
+                    <div style="display: flex; align-items: center; justify-content: space-between; background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <span style="font-size: 2rem; font-weight: bold;">${pair.char1}</span>
+                            <span style="color: #999;">vs</span>
+                            <span style="font-size: 2rem; font-weight: bold;">${pair.char2}</span>
+                        </div>
+                        <button onclick="deleteSimilarPair(${index})" style="padding: 8px 15px; background: #ff4444; color: white; border: none; border-radius: 6px; cursor: pointer;">刪除</button>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // 開始相近字測驗
+        function startSimilarCharQuiz() {
+            if (similarCharPairs.length === 0) {
+                alert('還沒有建立任何相近字組！\n請先點擊「管理相近字」新增。');
+                return;
+            }
+            
+            // 為每組相近字隨機選一個字出題（每次都重新隨機）
+            quizList = [];
+            similarCharPairs.forEach(pair => {
+                // 隨機選 char1 或 char2
+                const targetChar = Math.random() < 0.5 ? pair.char1 : pair.char2;
+                quizList.push({
+                    target: targetChar,
+                    options: [pair.char1, pair.char2]
+                });
+            });
+            
+            // 隨機排序題目順序
+            quizList = shuffleArray(quizList);
+            quizIndex = 0;
+            
+            showSimilarQuiz();
+            document.getElementById('similarQuizModal').classList.add('active');
+        }
+        
+        // 顯示測驗題目
+        function showSimilarQuiz() {
+            if (quizIndex >= quizList.length) {
+                document.getElementById('quizProgress').textContent = '🎉 測驗完成！';
+                document.getElementById('quizQuestion').textContent = '全部完成，繼續加油！';
+                document.getElementById('quizOption1').style.display = 'none';
+                document.getElementById('quizOption2').style.display = 'none';
+                return;
+            }
+            
+            const quiz = quizList[quizIndex];
+            const total = quizList.length;
+            
+            // 隨機決定選項順序
+            const randomOrder = Math.random() < 0.5;
+            currentQuizAnswer = randomOrder ? 1 : 0;
+            
+            const option1 = randomOrder ? quiz.options[1] : quiz.options[0];
+            const option2 = randomOrder ? quiz.options[0] : quiz.options[1];
+            
+            document.getElementById('quizProgress').textContent = `第 ${quizIndex + 1} / ${total} 題`;
+            document.getElementById('quizQuestion').textContent = `請選出你聽到的字：`;
+            
+            document.getElementById('quizOption1').textContent = option1;
+            document.getElementById('quizOption2').textContent = option2;
+            document.getElementById('quizOption1').style.display = 'block';
+            document.getElementById('quizOption2').style.display = 'block';
+            document.getElementById('quizResult').style.display = 'none';
+            
+            // 自動播放語音（延遲 300ms 讓 UI 先渲染）
+            setTimeout(() => playSimilarCharSound(), 300);
+        }
+        
+        // 播放相近字測驗的語音
+        function playSimilarCharSound() {
+            if (quizIndex >= quizList.length) return; // 測驗已結束
+            
+            const quiz = quizList[quizIndex];
+            if (!quiz || !quiz.target) return;
+            
+            // 先取消之前的播放
+            speechSynthesis.cancel();
+            
+            // 使用 Web Speech API 播放語音
+            const utterance = new SpeechSynthesisUtterance(quiz.target);
+            utterance.lang = 'zh-TW';  // 台灣中文
+            utterance.rate = 0.5;      // 很慢的速度（適合4歲小孩）
+            utterance.pitch = 1.2;     // 稍微提高音調（更友善）
+            utterance.volume = 1.0;    // 最大音量
+            
+            speechSynthesis.speak(utterance);
+        }
+        
+        // 選擇答案
+        function selectQuizAnswer(selected) {
+            const quiz = quizList[quizIndex];
+            const resultDiv = document.getElementById('quizResult');
+            
+            // 判斷是否正確
+            const isCorrect = (selected === 0 && currentQuizAnswer === 0) || 
+                             (selected === 1 && currentQuizAnswer === 1);
+            
+            if (isCorrect) {
+                resultDiv.textContent = '✅ 答對了！';
+                resultDiv.style.background = '#d4edda';
+                resultDiv.style.color = '#155724';
+            } else {
+                resultDiv.textContent = `❌ 答錯了！正確答案是：${quiz.target}`;
+                resultDiv.style.background = '#f8d7da';
+                resultDiv.style.color = '#721c24';
+            }
+            
+            resultDiv.style.display = 'block';
+            
+            // 1秒後自動進入下一題
+            setTimeout(() => {
+                quizIndex++;
+                showSimilarQuiz();
+            }, 1500);
+        }
+        
+        // 結束測驗
+        function endSimilarQuiz() {
+            console.log('endSimilarQuiz 被呼叫'); // 除錯用
+            
+            // 停止語音播放
+            speechSynthesis.cancel();
+            
+            // 重置測驗狀態
+            quizIndex = 0;
+            quizList = [];
+            
+            // 關閉模態框
+            const modal = document.getElementById('similarQuizModal');
+            if (modal) {
+                modal.classList.remove('active');
+                console.log('Modal 已關閉');
+            } else {
+                console.error('找不到 similarQuizModal 元素');
+            }
+        }
+        
+        // 儲存相近字到 localStorage 和 Firebase
+        function saveSimilarPairs() {
+            localStorage.setItem('sister_similarPairs', JSON.stringify(similarCharPairs));
+            saveSimilarPairsToFirebase();
+        }
+        
+        // 載入相近字
+        function loadSimilarPairs() {
+            const saved = localStorage.getItem('sister_similarPairs');
+            if (saved) {
+                try {
+                    similarCharPairs = JSON.parse(saved);
+                } catch (e) {
+                    similarCharPairs = [];
+                }
+            }
+        }
+        
+        // 儲存到 Firebase
+        async function saveSimilarPairsToFirebase() {
+            if (!currentUser || currentLearner !== 'sister') return;
+            try {
+                await db.collection('users').doc(currentUser.uid).set({
+                    sister: {
+                        similarPairs: similarCharPairs
+                    }
+                }, { merge: true });
+            } catch (error) {
+                console.error('儲存相近字失敗:', error);
+            }
+        }
+        
+        // 從 Firebase 載入相近字
+        async function loadSimilarPairsFromFirebase() {
+            if (!currentUser || currentLearner !== 'sister') return;
+            try {
+                const doc = await db.collection('users').doc(currentUser.uid).get();
+                if (doc.exists) {
+                    const data = doc.data().sister;
+                    if (data && data.similarPairs) {
+                        similarCharPairs = data.similarPairs;
+                        localStorage.setItem('sister_similarPairs', JSON.stringify(similarCharPairs));
+                    }
+                }
+            } catch (error) {
+                console.error('載入相近字失敗:', error);
+            }
+        }
+        
+    </script>
+    </div> <!-- 關閉 appContent -->
+</body>
+</html>
