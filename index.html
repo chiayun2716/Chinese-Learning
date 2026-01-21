@@ -1086,37 +1086,16 @@
         <div class="modal-content" style="max-width: 700px;">
             <div class="review-mode">
                 <div class="review-progress" id="quizProgress">準備好了嗎？</div>
-                
-                <!-- 語音播放區域 -->
-                <div style="background: linear-gradient(135deg, #FFE8F0 0%, #FFF8F3 100%); border-radius: 20px; padding: 30px; margin: 20px 0;">
-                    <div style="font-size: 4rem; margin-bottom: 15px; animation: pulse 2s infinite;">🔊</div>
-                    <button onclick="playSimilarCharSound()" 
-                            style="background: linear-gradient(135deg, #FF6B9D 0%, #FF8FB3 100%); 
-                                   color: white; 
-                                   border: none; 
-                                   border-radius: 15px; 
-                                   padding: 15px 40px; 
-                                   font-size: 1.2rem; 
-                                   font-weight: 600; 
-                                   cursor: pointer; 
-                                   box-shadow: 0 4px 15px rgba(255, 107, 157, 0.3);
-                                   font-family: 'Noto Sans TC', sans-serif;">
-                        🔁 再聽一次
-                    </button>
-                </div>
-                
-                <div style="margin: 20px 0;">
-                    <p style="font-size: 1.3rem; color: rgba(255,255,255,0.9); margin-bottom: 20px;" id="quizQuestion">請選出你聽到的字：</p>
+                <div style="margin: 40px 0;">
+                    <p style="font-size: 1.2rem; color: rgba(255,255,255,0.9); margin-bottom: 20px;" id="quizQuestion">選出正確的字：</p>
+                    <div style="font-size: 4rem; font-weight: bold; margin: 20px 0;" id="quizTarget">？</div>
                 </div>
                 <div class="review-buttons" style="flex-direction: column; gap: 15px;">
-                    <button class="button-success" onclick="selectQuizAnswer(0)" id="quizOption1" style="width: 100%; font-size: 3rem; padding: 30px;">選項1</button>
-                    <button class="button-success" onclick="selectQuizAnswer(1)" id="quizOption2" style="width: 100%; font-size: 3rem; padding: 30px;">選項2</button>
+                    <button class="button-success" onclick="selectQuizAnswer(0)" id="quizOption1" style="width: 100%; font-size: 2rem; padding: 20px;">選項1</button>
+                    <button class="button-success" onclick="selectQuizAnswer(1)" id="quizOption2" style="width: 100%; font-size: 2rem; padding: 20px;">選項2</button>
                 </div>
                 <div style="margin-top: 20px;">
-                    <button class="button-secondary" id="endQuizBtn" onclick="endSimilarQuiz()" 
-                            style="font-size: 1.1rem; padding: 12px 30px; cursor: pointer; z-index: 1000; position: relative;">
-                        ❌ 結束測驗
-                    </button>
+                    <button class="button-secondary" onclick="endSimilarQuiz()">結束測驗</button>
                 </div>
                 <div id="quizResult" style="margin-top: 20px; padding: 15px; border-radius: 8px; display: none; font-size: 1.2rem;"></div>
             </div>
@@ -1299,14 +1278,134 @@
             // 如果 localStorage 沒有資料或資料是空的，載入預設資料
             if (!hasData) {
                 if (currentLearner === 'sister') {
-                // 妹妹的預設字庫
-                const sisterDefaultChars = '一三下乳二五亮人佩來兔公冰冷去友呀呆哥四地坐多大妹媽子宛小少屍師快星書月朋東果桃樂橘歌洗潤火炒煮熊爸牙狗狸猩猴玩球生男紅綠羊老耳肉船色菜藍蘋蛇蛋西讀豬貓買車過醫門開阿雞電頭飛飯餅養香高髮鴨黃';
-                
-                for (let char of sisterDefaultChars) {
-                    learnedCharacters.set(char, createNewItem());
-                }
-                
-                console.log('✓ 載入妹妹預設資料:', learnedCharacters.size, '個字');
+                    // 妹妹的預設字庫（99個字，保留原始等級）
+                    const now = Date.now();
+                    const sisterDefaultChars = {
+                        "歌": {"level": 0, "lastReview": now, "nextReview": now},
+                        "貓": {"level": 0, "lastReview": now, "nextReview": now},
+                        "少": {"level": 0, "lastReview": now, "nextReview": now},
+                        "三": {"level": 4, "lastReview": now, "nextReview": now},
+                        "綠": {"level": 0, "lastReview": now, "nextReview": now},
+                        "生": {"level": 0, "lastReview": now, "nextReview": now},
+                        "桃": {"level": 0, "lastReview": now, "nextReview": now},
+                        "哥": {"level": 4, "lastReview": now, "nextReview": now},
+                        "人": {"level": 4, "lastReview": now, "nextReview": now},
+                        "呀": {"level": 0, "lastReview": now, "nextReview": now},
+                        "下": {"level": 0, "lastReview": now, "nextReview": now},
+                        "飛": {"level": 0, "lastReview": now, "nextReview": now},
+                        "冰": {"level": 0, "lastReview": now, "nextReview": now},
+                        "快": {"level": 0, "lastReview": now, "nextReview": now},
+                        "一": {"level": 4, "lastReview": now, "nextReview": now},
+                        "地": {"level": 0, "lastReview": now, "nextReview": now},
+                        "小": {"level": 4, "lastReview": now, "nextReview": now},
+                        "蛇": {"level": 0, "lastReview": now, "nextReview": now},
+                        "過": {"level": 0, "lastReview": now, "nextReview": now},
+                        "讀": {"level": 0, "lastReview": now, "nextReview": now},
+                        "猩": {"level": 0, "lastReview": now, "nextReview": now},
+                        "豬": {"level": 0, "lastReview": now, "nextReview": now},
+                        "髮": {"level": 0, "lastReview": now, "nextReview": now},
+                        "阿": {"level": 0, "lastReview": now, "nextReview": now},
+                        "橘": {"level": 0, "lastReview": now, "nextReview": now},
+                        "船": {"level": 3, "lastReview": now, "nextReview": now},
+                        "黃": {"level": 0, "lastReview": now, "nextReview": now},
+                        "蛋": {"level": 4, "lastReview": now, "nextReview": now},
+                        "猴": {"level": 0, "lastReview": now, "nextReview": now},
+                        "乳": {"level": 0, "lastReview": now, "nextReview": now},
+                        "牙": {"level": 0, "lastReview": now, "nextReview": now},
+                        "醫": {"level": 4, "lastReview": now, "nextReview": now},
+                        "二": {"level": 4, "lastReview": now, "nextReview": now},
+                        "餅": {"level": 0, "lastReview": now, "nextReview": now},
+                        "五": {"level": 4, "lastReview": now, "nextReview": now},
+                        "熊": {"level": 4, "lastReview": now, "nextReview": now},
+                        "四": {"level": 0, "lastReview": now, "nextReview": now},
+                        "買": {"level": 0, "lastReview": now, "nextReview": now},
+                        "煮": {"level": 0, "lastReview": now, "nextReview": now},
+                        "潤": {"level": 0, "lastReview": now, "nextReview": now},
+                        "耳": {"level": 0, "lastReview": now, "nextReview": now},
+                        "老": {"level": 0, "lastReview": now, "nextReview": now},
+                        "飯": {"level": 4, "lastReview": now, "nextReview": now},
+                        "火": {"level": 4, "lastReview": now, "nextReview": now},
+                        "佩": {"level": 0, "lastReview": now, "nextReview": now},
+                        "果": {"level": 0, "lastReview": now, "nextReview": now},
+                        "友": {"level": 0, "lastReview": now, "nextReview": now},
+                        "妹": {"level": 4, "lastReview": now, "nextReview": now},
+                        "紅": {"level": 0, "lastReview": now, "nextReview": now},
+                        "香": {"level": 3, "lastReview": now, "nextReview": now},
+                        "洗": {"level": 0, "lastReview": now, "nextReview": now},
+                        "兔": {"level": 4, "lastReview": now, "nextReview": now},
+                        "車": {"level": 0, "lastReview": now, "nextReview": now},
+                        "亮": {"level": 0, "lastReview": now, "nextReview": now},
+                        "東": {"level": 0, "lastReview": now, "nextReview": now},
+                        "來": {"level": 0, "lastReview": now, "nextReview": now},
+                        "西": {"level": 0, "lastReview": now, "nextReview": now},
+                        "鴨": {"level": 0, "lastReview": now, "nextReview": now},
+                        "玩": {"level": 0, "lastReview": now, "nextReview": now},
+                        "大": {"level": 4, "lastReview": now, "nextReview": now},
+                        "冷": {"level": 0, "lastReview": now, "nextReview": now},
+                        "書": {"level": 0, "lastReview": now, "nextReview": now},
+                        "雞": {"level": 0, "lastReview": now, "nextReview": now},
+                        "肉": {"level": 0, "lastReview": now, "nextReview": now},
+                        "養": {"level": 0, "lastReview": now, "nextReview": now},
+                        "子": {"level": 0, "lastReview": now, "nextReview": now},
+                        "月": {"level": 4, "lastReview": now, "nextReview": now},
+                        "去": {"level": 0, "lastReview": now, "nextReview": now},
+                        "星": {"level": 4, "lastReview": now, "nextReview": now},
+                        "狗": {"level": 0, "lastReview": now, "nextReview": now},
+                        "呆": {"level": 0, "lastReview": now, "nextReview": now},
+                        "爸": {"level": 4, "lastReview": now, "nextReview": now},
+                        "頭": {"level": 0, "lastReview": now, "nextReview": now},
+                        "師": {"level": 0, "lastReview": now, "nextReview": now},
+                        "藍": {"level": 0, "lastReview": now, "nextReview": now},
+                        "男": {"level": 0, "lastReview": now, "nextReview": now},
+                        "菜": {"level": 4, "lastReview": now, "nextReview": now},
+                        "媽": {"level": 4, "lastReview": now, "nextReview": now},
+                        "多": {"level": 0, "lastReview": now, "nextReview": now},
+                        "色": {"level": 0, "lastReview": now, "nextReview": now},
+                        "樂": {"level": 0, "lastReview": now, "nextReview": now},
+                        "羊": {"level": 0, "lastReview": now, "nextReview": now},
+                        "坐": {"level": 4, "lastReview": now, "nextReview": now},
+                        "門": {"level": 4, "lastReview": now, "nextReview": now},
+                        "蘋": {"level": 0, "lastReview": now, "nextReview": now},
+                        "高": {"level": 0, "lastReview": now, "nextReview": now},
+                        "朋": {"level": 0, "lastReview": now, "nextReview": now},
+                        "公": {"level": 0, "lastReview": now, "nextReview": now},
+                        "宛": {"level": 0, "lastReview": now, "nextReview": now},
+                        "開": {"level": 0, "lastReview": now, "nextReview": now},
+                        "電": {"level": 0, "lastReview": now, "nextReview": now},
+                        "球": {"level": 0, "lastReview": now, "nextReview": now},
+                        "炒": {"level": 0, "lastReview": now, "nextReview": now},
+                        "園": {"level": 0, "lastReview": now, "nextReview": now},
+                        "山": {"level": 0, "lastReview": now, "nextReview": now},
+                        "跳": {"level": 0, "lastReview": now, "nextReview": now},
+                        "舞": {"level": 0, "lastReview": now, "nextReview": now},
+                        "米": {"level": 0, "lastReview": now, "nextReview": now},
+                        "鼠": {"level": 0, "lastReview": now, "nextReview": now}
+                    };
+                    
+                    const sisterDefaultWords = {
+                        "過來": {"level": 0, "lastReview": now, "nextReview": now},
+                        "過去": {"level": 0, "lastReview": now, "nextReview": now},
+                        "去佩佩豬樂園": {"level": 4, "lastReview": now, "nextReview": now},
+                        "高山": {"level": 0, "lastReview": now, "nextReview": now},
+                        "跳舞": {"level": 0, "lastReview": now, "nextReview": now},
+                        "去公園": {"level": 2, "lastReview": now, "nextReview": now},
+                        "紅色": {"level": 0, "lastReview": now, "nextReview": now},
+                        "黃色": {"level": 0, "lastReview": now, "nextReview": now},
+                        "米餅": {"level": 0, "lastReview": now, "nextReview": now},
+                        "米老鼠": {"level": 0, "lastReview": now, "nextReview": now}
+                    };
+                    
+                    // 載入字
+                    Object.entries(sisterDefaultChars).forEach(([char, data]) => {
+                        learnedCharacters.set(char, data);
+                    });
+                    
+                    // 載入詞
+                    Object.entries(sisterDefaultWords).forEach(([word, data]) => {
+                        learnedWords.set(word, data);
+                    });
+                    
+                    console.log('✓ 載入妹妹預設資料:', learnedCharacters.size, '個字,', learnedWords.size, '個詞');
                 } else if (currentLearner === 'brother') {
                 // 哥哥的一上字詞預設資料（0-6課）
                 const now = Date.now();
@@ -3091,18 +3190,24 @@
                 return;
             }
             
-            // 為每組相近字隨機選一個字出題（每次都重新隨機）
+            // 為每組相近字創建兩個題目（正反各一題）
             quizList = [];
             similarCharPairs.forEach(pair => {
-                // 隨機選 char1 或 char2
-                const targetChar = Math.random() < 0.5 ? pair.char1 : pair.char2;
+                // 題目1: 問 char1，選項是 char1 和 char2
                 quizList.push({
-                    target: targetChar,
-                    options: [pair.char1, pair.char2]
+                    target: pair.char1,
+                    options: [pair.char1, pair.char2],
+                    correctAnswer: 0
+                });
+                // 題目2: 問 char2，選項是 char1 和 char2
+                quizList.push({
+                    target: pair.char2,
+                    options: [pair.char1, pair.char2],
+                    correctAnswer: 0
                 });
             });
             
-            // 隨機排序題目順序
+            // 隨機排序
             quizList = shuffleArray(quizList);
             quizIndex = 0;
             
@@ -3114,6 +3219,7 @@
         function showSimilarQuiz() {
             if (quizIndex >= quizList.length) {
                 document.getElementById('quizProgress').textContent = '🎉 測驗完成！';
+                document.getElementById('quizTarget').textContent = '太棒了！';
                 document.getElementById('quizQuestion').textContent = '全部完成，繼續加油！';
                 document.getElementById('quizOption1').style.display = 'none';
                 document.getElementById('quizOption2').style.display = 'none';
@@ -3131,36 +3237,14 @@
             const option2 = randomOrder ? quiz.options[0] : quiz.options[1];
             
             document.getElementById('quizProgress').textContent = `第 ${quizIndex + 1} / ${total} 題`;
-            document.getElementById('quizQuestion').textContent = `請選出你聽到的字：`;
+            document.getElementById('quizTarget').textContent = quiz.target;
+            document.getElementById('quizQuestion').textContent = `選出正確的字：`;
             
             document.getElementById('quizOption1').textContent = option1;
             document.getElementById('quizOption2').textContent = option2;
             document.getElementById('quizOption1').style.display = 'block';
             document.getElementById('quizOption2').style.display = 'block';
             document.getElementById('quizResult').style.display = 'none';
-            
-            // 自動播放語音（延遲 300ms 讓 UI 先渲染）
-            setTimeout(() => playSimilarCharSound(), 300);
-        }
-        
-        // 播放相近字測驗的語音
-        function playSimilarCharSound() {
-            if (quizIndex >= quizList.length) return; // 測驗已結束
-            
-            const quiz = quizList[quizIndex];
-            if (!quiz || !quiz.target) return;
-            
-            // 先取消之前的播放
-            speechSynthesis.cancel();
-            
-            // 使用 Web Speech API 播放語音
-            const utterance = new SpeechSynthesisUtterance(quiz.target);
-            utterance.lang = 'zh-TW';  // 台灣中文
-            utterance.rate = 0.5;      // 很慢的速度（適合4歲小孩）
-            utterance.pitch = 1.2;     // 稍微提高音調（更友善）
-            utterance.volume = 1.0;    // 最大音量
-            
-            speechSynthesis.speak(utterance);
         }
         
         // 選擇答案
@@ -3193,23 +3277,7 @@
         
         // 結束測驗
         function endSimilarQuiz() {
-            console.log('endSimilarQuiz 被呼叫'); // 除錯用
-            
-            // 停止語音播放
-            speechSynthesis.cancel();
-            
-            // 重置測驗狀態
-            quizIndex = 0;
-            quizList = [];
-            
-            // 關閉模態框
-            const modal = document.getElementById('similarQuizModal');
-            if (modal) {
-                modal.classList.remove('active');
-                console.log('Modal 已關閉');
-            } else {
-                console.error('找不到 similarQuizModal 元素');
-            }
+            document.getElementById('similarQuizModal').classList.remove('active');
         }
         
         // 儲存相近字到 localStorage 和 Firebase
