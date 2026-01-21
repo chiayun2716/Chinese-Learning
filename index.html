@@ -1152,7 +1152,7 @@
 
         // ==================== 學習者切換功能 ====================
         
-        function resetCurrentLearner() {
+        async function resetCurrentLearner() {
             const learnerName = currentLearner === 'brother' ? '哥哥' : '妹妹';
             if (!confirm(`確定要重置${learnerName}的資料嗎？\n\n這將清除所有字詞和紀錄，並載入預設資料。`)) {
                 return;
@@ -1165,7 +1165,9 @@
             // 重新載入（會觸發預設資料載入）
             loadCurrentLearnerData();
             updateUI();
-            
+
+            // ✅ 新增這行：儲存到 Firebase
+            await saveToFirebase();
             showNotification(`✅ 已重置${learnerName}的預設資料`);
         }
         
