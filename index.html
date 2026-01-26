@@ -1152,7 +1152,7 @@
 
         // ==================== 學習者切換功能 ====================
         
-        async function resetCurrentLearner() {
+        function resetCurrentLearner() {
             const learnerName = currentLearner === 'brother' ? '哥哥' : '妹妹';
             if (!confirm(`確定要重置${learnerName}的資料嗎？\n\n這將清除所有字詞和紀錄，並載入預設資料。`)) {
                 return;
@@ -1165,9 +1165,7 @@
             // 重新載入（會觸發預設資料載入）
             loadCurrentLearnerData();
             updateUI();
-
-            // ✅ 新增這行：儲存到 Firebase
-            await saveToFirebase();
+            
             showNotification(`✅ 已重置${learnerName}的預設資料`);
         }
         
@@ -2994,22 +2992,33 @@
         async function loadFromFirebase() {
             if (!currentUser) return;
             
+            console.log('📥 開始從 Firebase 載入資料...');
+            console.log('當前學習者:', currentLearner);
+            
             try {
                 const doc = await db.collection('users').doc(currentUser.uid).get();
                 
                 if (doc.exists) {
-                    const data = doc.data()[currentLearner];
-                    if (data && data.characters && Object.keys(data.characters).length > 0) {
-                        // 雲端有資料，載入它
+                    const allData = doc.data();
+                    console.log('Firebase 文件存在，檢查', currentLearner, '的資料...');
+                    
+                    const data = allData[currentLearner];
+                    
+                    if (data && data.characters) {
+                        const charCount = Object.keys(data.characters).length;
+                        const wordCount = Object.keys(data.words || {}).length;
+                        
+                        console.log('✓ 找到雲端資料:', charCount, '個字,', wordCount, '個詞');
+                        
+                        // 載入字和詞
                         learnedCharacters = new Map(Object.entries(data.characters));
                         learnedWords = new Map(Object.entries(data.words || {}));
-                        console.log('✓ 從雲端載入資料');
                         
                         // 如果是妹妹，載入相近字
                         if (currentLearner === 'sister' && data.similarPairs) {
                             similarCharPairs = data.similarPairs;
                             localStorage.setItem('sister_similarPairs', JSON.stringify(similarCharPairs));
-                            console.log('✓ 從雲端載入相近字:', similarCharPairs.length, '組');
+                            console.log('✓ 載入相近字:', similarCharPairs.length, '組');
                         }
                         
                         updateUI();
@@ -3018,33 +3027,49 @@
                             updateSemesterCounts();
                         }
                         initSemesterFilters();
+                        
+                        console.log('✅ 資料載入完成!');
                         return;
+                    } else {
+                        console.log('⚠️ Firebase 文件存在，但', currentLearner, '沒有資料');
                     }
+                } else {
+                    console.log('⚠️ Firebase 文件不存在（首次使用）');
                 }
                 
-                // 沒有雲端資料，載入預設資料
-                console.log('⚠ 雲端沒有資料，載入預設資料');
+                // 只有在完全沒有資料時才載入預設
+                console.log('📦 載入預設資料...');
                 loadData();
                 
                 // 載入完預設資料後自動儲存到雲端
+                console.log('💾 將預設資料儲存到 Firebase...');
                 await saveToFirebase();
-                console.log('✓ 已將預設資料儲存到雲端');
+                console.log('✅ 預設資料已儲存');
                 
-                // 初始化學期篩選顯示
                 initSemesterFilters();
                 
             } catch (error) {
-                console.error('載入失敗:', error);
-                // 載入失敗時也要載入預設資料
-                loadData();
-                initSemesterFilters();
+                console.error('❌ 載入失敗:', error);
+                alert('載入資料失敗：' + error.message + '\n\n請重新整理頁面');
             }
         }
         
         // 儲存到 Firebase
         async function saveToFirebase() {
-            if (!currentUser) return;
+            if (!currentUser) {
+                console.warn('⚠️ 未登入，無法儲存到 Firebase');
+                return;
+            }
+            
             try {
+                const charCount = learnedCharacters.size;
+                const wordCount = learnedWords.size;
+                
+                console.log('💾 準備儲存到 Firebase...');
+                console.log('  學習者:', currentLearner);
+                console.log('  字數:', charCount);
+                console.log('  詞數:', wordCount);
+                
                 const dataToSave = {
                     characters: Object.fromEntries(learnedCharacters),
                     words: Object.fromEntries(learnedWords)
@@ -3053,13 +3078,18 @@
                 // 如果是妹妹，也儲存相近字
                 if (currentLearner === 'sister') {
                     dataToSave.similarPairs = similarCharPairs;
+                    console.log('  相近字組:', similarCharPairs.length);
                 }
                 
                 await db.collection('users').doc(currentUser.uid).set({
                     [currentLearner]: dataToSave
                 }, { merge: true });
+                
+                console.log('✅ 儲存成功！');
+                
             } catch (error) {
-                console.error('儲存失敗:', error);
+                console.error('❌ 儲存失敗:', error);
+                alert('儲存失敗：' + error.message + '\n\n你的變更可能無法同步到其他裝置');
             }
         }
         
