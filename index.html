@@ -7,8 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
     
     <!-- localStorage 版本：不需要 Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    
     
     <style>
         * {
@@ -638,7 +638,7 @@
     <div id="loginSection" style="display:none" style="display: flex; justify-content: center; align-items: center; min-height: 100vh;">
         <div style="background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 40px rgba(132, 94, 194, 0.2); text-align: center; max-width: 400px;">
             <h1 style="color: #845EC2; margin-bottom: 10px;">🌈 中文學習記錄器</h1>
-            <p style="color: #666; margin-bottom: 30px;">Firebase 雲端同步版</p>
+            <p style="color: #666; margin-bottom: 30px;">本地儲存版 - 資料存在瀏覽器</p>
             <button onclick="signInWithGoogle()" style="display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; padding: 12px 24px; background: white; border: 2px solid #ddd; border-radius: 12px; font-size: 1rem; font-weight: 500; cursor: pointer;">
                 <svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
                     <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
@@ -1104,19 +1104,7 @@
     <script>
         // ==================== Firebase 初始化 ====================
         
-        const firebaseConfig = {
-            apiKey: "AIzaSyAzFGk0_nvNTMR0HXZslHclOP9nKRRIcPU",
-            authDomain: "chinese-flashcard-ade72.firebaseapp.com",
-            projectId: "chinese-flashcard-ade72",
-            storageBucket: "chinese-flashcard-ade72.firebasestorage.app",
-            messagingSenderId: "169443250338",
-            appId: "1:169443250338:web:101b2507c9a8a7c3c907fb",
-            measurementId: "G-5QV4M1KGV0"
-        };
-        
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+        // 本地版本不需要 Firebase
         let currentUser = null;
         
         // ==================== 全域變數 ====================
@@ -1168,9 +1156,9 @@
             showNotification(`✅ 已重置${learnerName}的預設資料`);
         }
         
-        async function switchLearner(learner) {
-            // 儲存當前學習者的資料到 Firebase
-            await saveToFirebase();
+        function switchLearner(learner) {
+            // 儲存當前學習者的資料
+            saveCurrentLearnerData();
             
             // 切換學習者
             currentLearner = learner;
@@ -1186,7 +1174,38 @@
             const name = learner === 'brother' ? '哥哥' : '妹妹';
             document.getElementById('currentLearnerName').textContent = name;
             
-            // 本地版本不需要 Firebase 同步 else {
+            // 載入新學習者的資料
+            loadCurrentLearnerData();
+            
+            // 重置篩選器
+            charFilter = new Set(['all']);
+            wordFilter = new Set(['all']);
+            charSemesterFilter = new Set(['all']);
+            wordSemesterFilter = new Set(['all']);
+            charLessonFilter = 'all';
+            wordLessonFilter = 'all';
+            resetFilterButtons();
+            
+            // 控制學期篩選和課別篩選的顯示（只有哥哥才顯示）
+            const semesterFilterChar = document.getElementById('semesterFilterChar');
+            const semesterFilterWord = document.getElementById('semesterFilterWord');
+            const lessonFilterChar = document.getElementById('lessonFilterChar');
+            const lessonFilterWord = document.getElementById('lessonFilterWord');
+            
+            // 控制相近字辨識按鈕的顯示（只有妹妹才顯示）
+            const sisterOnlyButtons = document.querySelectorAll('.sister-only');
+            
+            if (learner === 'brother') {
+                semesterFilterChar.style.display = 'block';
+                semesterFilterWord.style.display = 'block';
+                lessonFilterChar.style.display = 'block';
+                lessonFilterWord.style.display = 'block';
+                // 更新課別選項和學期統計
+                updateLessonOptions();
+                updateSemesterCounts();
+                // 隱藏妹妹專屬按鈕
+                sisterOnlyButtons.forEach(btn => btn.style.display = 'none');
+            } else {
                 semesterFilterChar.style.display = 'none';
                 semesterFilterWord.style.display = 'none';
                 lessonFilterChar.style.display = 'none';
