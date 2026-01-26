@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>中文學習記錄器 - Firebase 雲端版</title>
+    <title>中文學習記錄器 - 本地版</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
     
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <!-- localStorage 版本：不需要 Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     
@@ -636,7 +635,7 @@
 </head>
 <body>
     <!-- 登入畫面 -->
-    <div id="loginSection" style="display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+    <div id="loginSection" style="display:none" style="display: flex; justify-content: center; align-items: center; min-height: 100vh;">
         <div style="background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 40px rgba(132, 94, 194, 0.2); text-align: center; max-width: 400px;">
             <h1 style="color: #845EC2; margin-bottom: 10px;">🌈 中文學習記錄器</h1>
             <p style="color: #666; margin-bottom: 30px;">Firebase 雲端同步版</p>
@@ -654,7 +653,7 @@
     </div>
     
     <!-- 主應用 -->
-    <div id="appContent" class="hidden">
+    <div id="appContent">
     <div class="container">
         <!-- 使用者資訊 -->
         <div style="text-align: right; padding: 10px 20px; background: white; border-radius: 12px; margin-bottom: 20px;">
@@ -1187,38 +1186,7 @@
             const name = learner === 'brother' ? '哥哥' : '妹妹';
             document.getElementById('currentLearnerName').textContent = name;
             
-            // 從 Firebase 載入新學習者的資料
-            await loadFromFirebase();
-            
-            // 重置篩選器
-            charFilter = new Set(['all']);
-            wordFilter = new Set(['all']);
-            charSemesterFilter = new Set(['all']);
-            wordSemesterFilter = new Set(['all']);
-            charLessonFilter = 'all';
-            wordLessonFilter = 'all';
-            resetFilterButtons();
-            
-            // 控制學期篩選和課別篩選的顯示（只有哥哥才顯示）
-            const semesterFilterChar = document.getElementById('semesterFilterChar');
-            const semesterFilterWord = document.getElementById('semesterFilterWord');
-            const lessonFilterChar = document.getElementById('lessonFilterChar');
-            const lessonFilterWord = document.getElementById('lessonFilterWord');
-            
-            // 控制相近字辨識按鈕的顯示（只有妹妹才顯示）
-            const sisterOnlyButtons = document.querySelectorAll('.sister-only');
-            
-            if (learner === 'brother') {
-                semesterFilterChar.style.display = 'block';
-                semesterFilterWord.style.display = 'block';
-                lessonFilterChar.style.display = 'block';
-                lessonFilterWord.style.display = 'block';
-                // 更新課別選項和學期統計
-                updateLessonOptions();
-                updateSemesterCounts();
-                // 隱藏妹妹專屬按鈕
-                sisterOnlyButtons.forEach(btn => btn.style.display = 'none');
-            } else {
+            // 本地版本不需要 Firebase 同步 else {
                 semesterFilterChar.style.display = 'none';
                 semesterFilterWord.style.display = 'none';
                 lessonFilterChar.style.display = 'none';
@@ -1278,134 +1246,15 @@
             // 如果 localStorage 沒有資料或資料是空的，載入預設資料
             if (!hasData) {
                 if (currentLearner === 'sister') {
-                    // 妹妹的預設字庫（99個字，保留原始等級）
-                    const now = Date.now();
-                    const sisterDefaultChars = {
-                        "歌": {"level": 0, "lastReview": now, "nextReview": now},
-                        "貓": {"level": 0, "lastReview": now, "nextReview": now},
-                        "少": {"level": 0, "lastReview": now, "nextReview": now},
-                        "三": {"level": 4, "lastReview": now, "nextReview": now},
-                        "綠": {"level": 0, "lastReview": now, "nextReview": now},
-                        "生": {"level": 0, "lastReview": now, "nextReview": now},
-                        "桃": {"level": 0, "lastReview": now, "nextReview": now},
-                        "哥": {"level": 4, "lastReview": now, "nextReview": now},
-                        "人": {"level": 4, "lastReview": now, "nextReview": now},
-                        "呀": {"level": 0, "lastReview": now, "nextReview": now},
-                        "下": {"level": 0, "lastReview": now, "nextReview": now},
-                        "飛": {"level": 0, "lastReview": now, "nextReview": now},
-                        "冰": {"level": 0, "lastReview": now, "nextReview": now},
-                        "快": {"level": 0, "lastReview": now, "nextReview": now},
-                        "一": {"level": 4, "lastReview": now, "nextReview": now},
-                        "地": {"level": 0, "lastReview": now, "nextReview": now},
-                        "小": {"level": 4, "lastReview": now, "nextReview": now},
-                        "蛇": {"level": 0, "lastReview": now, "nextReview": now},
-                        "過": {"level": 0, "lastReview": now, "nextReview": now},
-                        "讀": {"level": 0, "lastReview": now, "nextReview": now},
-                        "猩": {"level": 0, "lastReview": now, "nextReview": now},
-                        "豬": {"level": 0, "lastReview": now, "nextReview": now},
-                        "髮": {"level": 0, "lastReview": now, "nextReview": now},
-                        "阿": {"level": 0, "lastReview": now, "nextReview": now},
-                        "橘": {"level": 0, "lastReview": now, "nextReview": now},
-                        "船": {"level": 3, "lastReview": now, "nextReview": now},
-                        "黃": {"level": 0, "lastReview": now, "nextReview": now},
-                        "蛋": {"level": 4, "lastReview": now, "nextReview": now},
-                        "猴": {"level": 0, "lastReview": now, "nextReview": now},
-                        "乳": {"level": 0, "lastReview": now, "nextReview": now},
-                        "牙": {"level": 0, "lastReview": now, "nextReview": now},
-                        "醫": {"level": 4, "lastReview": now, "nextReview": now},
-                        "二": {"level": 4, "lastReview": now, "nextReview": now},
-                        "餅": {"level": 0, "lastReview": now, "nextReview": now},
-                        "五": {"level": 4, "lastReview": now, "nextReview": now},
-                        "熊": {"level": 4, "lastReview": now, "nextReview": now},
-                        "四": {"level": 0, "lastReview": now, "nextReview": now},
-                        "買": {"level": 0, "lastReview": now, "nextReview": now},
-                        "煮": {"level": 0, "lastReview": now, "nextReview": now},
-                        "潤": {"level": 0, "lastReview": now, "nextReview": now},
-                        "耳": {"level": 0, "lastReview": now, "nextReview": now},
-                        "老": {"level": 0, "lastReview": now, "nextReview": now},
-                        "飯": {"level": 4, "lastReview": now, "nextReview": now},
-                        "火": {"level": 4, "lastReview": now, "nextReview": now},
-                        "佩": {"level": 0, "lastReview": now, "nextReview": now},
-                        "果": {"level": 0, "lastReview": now, "nextReview": now},
-                        "友": {"level": 0, "lastReview": now, "nextReview": now},
-                        "妹": {"level": 4, "lastReview": now, "nextReview": now},
-                        "紅": {"level": 0, "lastReview": now, "nextReview": now},
-                        "香": {"level": 3, "lastReview": now, "nextReview": now},
-                        "洗": {"level": 0, "lastReview": now, "nextReview": now},
-                        "兔": {"level": 4, "lastReview": now, "nextReview": now},
-                        "車": {"level": 0, "lastReview": now, "nextReview": now},
-                        "亮": {"level": 0, "lastReview": now, "nextReview": now},
-                        "東": {"level": 0, "lastReview": now, "nextReview": now},
-                        "來": {"level": 0, "lastReview": now, "nextReview": now},
-                        "西": {"level": 0, "lastReview": now, "nextReview": now},
-                        "鴨": {"level": 0, "lastReview": now, "nextReview": now},
-                        "玩": {"level": 0, "lastReview": now, "nextReview": now},
-                        "大": {"level": 4, "lastReview": now, "nextReview": now},
-                        "冷": {"level": 0, "lastReview": now, "nextReview": now},
-                        "書": {"level": 0, "lastReview": now, "nextReview": now},
-                        "雞": {"level": 0, "lastReview": now, "nextReview": now},
-                        "肉": {"level": 0, "lastReview": now, "nextReview": now},
-                        "養": {"level": 0, "lastReview": now, "nextReview": now},
-                        "子": {"level": 0, "lastReview": now, "nextReview": now},
-                        "月": {"level": 4, "lastReview": now, "nextReview": now},
-                        "去": {"level": 0, "lastReview": now, "nextReview": now},
-                        "星": {"level": 4, "lastReview": now, "nextReview": now},
-                        "狗": {"level": 0, "lastReview": now, "nextReview": now},
-                        "呆": {"level": 0, "lastReview": now, "nextReview": now},
-                        "爸": {"level": 4, "lastReview": now, "nextReview": now},
-                        "頭": {"level": 0, "lastReview": now, "nextReview": now},
-                        "師": {"level": 0, "lastReview": now, "nextReview": now},
-                        "藍": {"level": 0, "lastReview": now, "nextReview": now},
-                        "男": {"level": 0, "lastReview": now, "nextReview": now},
-                        "菜": {"level": 4, "lastReview": now, "nextReview": now},
-                        "媽": {"level": 4, "lastReview": now, "nextReview": now},
-                        "多": {"level": 0, "lastReview": now, "nextReview": now},
-                        "色": {"level": 0, "lastReview": now, "nextReview": now},
-                        "樂": {"level": 0, "lastReview": now, "nextReview": now},
-                        "羊": {"level": 0, "lastReview": now, "nextReview": now},
-                        "坐": {"level": 4, "lastReview": now, "nextReview": now},
-                        "門": {"level": 4, "lastReview": now, "nextReview": now},
-                        "蘋": {"level": 0, "lastReview": now, "nextReview": now},
-                        "高": {"level": 0, "lastReview": now, "nextReview": now},
-                        "朋": {"level": 0, "lastReview": now, "nextReview": now},
-                        "公": {"level": 0, "lastReview": now, "nextReview": now},
-                        "宛": {"level": 0, "lastReview": now, "nextReview": now},
-                        "開": {"level": 0, "lastReview": now, "nextReview": now},
-                        "電": {"level": 0, "lastReview": now, "nextReview": now},
-                        "球": {"level": 0, "lastReview": now, "nextReview": now},
-                        "炒": {"level": 0, "lastReview": now, "nextReview": now},
-                        "園": {"level": 0, "lastReview": now, "nextReview": now},
-                        "山": {"level": 0, "lastReview": now, "nextReview": now},
-                        "跳": {"level": 0, "lastReview": now, "nextReview": now},
-                        "舞": {"level": 0, "lastReview": now, "nextReview": now},
-                        "米": {"level": 0, "lastReview": now, "nextReview": now},
-                        "鼠": {"level": 0, "lastReview": now, "nextReview": now}
-                    };
-                    
-                    const sisterDefaultWords = {
-                        "過來": {"level": 0, "lastReview": now, "nextReview": now},
-                        "過去": {"level": 0, "lastReview": now, "nextReview": now},
-                        "去佩佩豬樂園": {"level": 4, "lastReview": now, "nextReview": now},
-                        "高山": {"level": 0, "lastReview": now, "nextReview": now},
-                        "跳舞": {"level": 0, "lastReview": now, "nextReview": now},
-                        "去公園": {"level": 2, "lastReview": now, "nextReview": now},
-                        "紅色": {"level": 0, "lastReview": now, "nextReview": now},
-                        "黃色": {"level": 0, "lastReview": now, "nextReview": now},
-                        "米餅": {"level": 0, "lastReview": now, "nextReview": now},
-                        "米老鼠": {"level": 0, "lastReview": now, "nextReview": now}
-                    };
+                    // 妹妹的預設字庫（161個字）
+                    const sisterDefaultChars = '上下不丟乳亮佩來個優公冰冷剪動去友口吃呀呆哈啊喝喵嘴四園土地多太女姨子孩宛少尿山師帽弟心快愛我手打搬書朋木東果桃桌樂橘歌水注洗潤濕炒煮牙狗猩猴玩球生男畫病白皮眉石笑筆筷米粉紅綠羊老耳肉肚舞色芒花草葡藍蘋蛇西讀豆豬貓買起跳車過酪鋼錢開阿雞雪電鞋頭飛飽餅養馬高髮鬆魚鴨鹿黃黑鼠鼻船香一三二五人兔哥坐大妹媽小星月火熊爸菜蛋醫門飯';
                     
                     // 載入字
-                    Object.entries(sisterDefaultChars).forEach(([char, data]) => {
-                        learnedCharacters.set(char, data);
-                    });
+                    for (let char of sisterDefaultChars) {
+                        learnedCharacters.set(char, createNewItem());
+                    }
                     
-                    // 載入詞
-                    Object.entries(sisterDefaultWords).forEach(([word, data]) => {
-                        learnedWords.set(word, data);
-                    });
-                    
-                    console.log('✓ 載入妹妹預設資料:', learnedCharacters.size, '個字,', learnedWords.size, '個詞');
+                    console.log('✓ 載入妹妹預設資料:', learnedCharacters.size, '個字');
                 } else if (currentLearner === 'brother') {
                 // 哥哥的一上字詞預設資料（0-6課）
                 const now = Date.now();
@@ -2958,176 +2807,20 @@
             lessonFilterWord.style.display = 'none';
         }
 
-        // ==================== Firebase 認證與同步 ====================
+        // ==================== 本地儲存系統 ====================
+        // 純 localStorage 版本：不需要登入，直接使用
         
-        function signInWithGoogle() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).catch(error => {
-                console.error('登入失敗:', error);
-                alert('登入失敗：' + error.message);
-            });
-        }
-        
-        function signOut() {
-            auth.signOut().catch(error => {
-                console.error('登出失敗:', error);
-            });
-        }
-        
-        // 監聽認證狀態
-        auth.onAuthStateChanged(async (user) => {
-            currentUser = user;
-            if (user) {
-                document.getElementById('loginSection')?.classList.add('hidden');
-                document.getElementById('appContent')?.classList.remove('hidden');
-                document.getElementById('userEmail').textContent = user.email;
-                await loadFromFirebase();
-            } else {
-                document.getElementById('loginSection')?.classList.remove('hidden');
-                document.getElementById('appContent')?.classList.add('hidden');
-            }
+        // 頁面載入時自動載入資料
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('📱 本地版本載入中...');
+            loadData();
+            updateUI();
+            console.log('✅ 資料載入完成');
+            console.log('字數:', learnedCharacters.size);
+            console.log('詞數:', learnedWords.size);
         });
         
-        // 從 Firebase 載入
-        async function loadFromFirebase() {
-            if (!currentUser) return;
-            
-            console.log('📥 開始從 Firebase 載入資料...');
-            console.log('當前學習者:', currentLearner);
-            
-            try {
-                const doc = await db.collection('users').doc(currentUser.uid).get();
-                
-                if (doc.exists) {
-                    const allData = doc.data();
-                    console.log('Firebase 文件存在，檢查', currentLearner, '的資料...');
-                    
-                    const data = allData[currentLearner];
-                    
-                    if (data && data.characters) {
-                        const charCount = Object.keys(data.characters).length;
-                        const wordCount = Object.keys(data.words || {}).length;
-                        
-                        console.log('✓ 找到雲端資料:', charCount, '個字,', wordCount, '個詞');
-                        
-                        // 載入字和詞
-                        learnedCharacters = new Map(Object.entries(data.characters));
-                        learnedWords = new Map(Object.entries(data.words || {}));
-                        
-                        // 如果是妹妹，載入相近字
-                        if (currentLearner === 'sister' && data.similarPairs) {
-                            similarCharPairs = data.similarPairs;
-                            localStorage.setItem('sister_similarPairs', JSON.stringify(similarCharPairs));
-                            console.log('✓ 載入相近字:', similarCharPairs.length, '組');
-                        }
-                        
-                        updateUI();
-                        if (currentLearner === 'brother') {
-                            updateLessonOptions();
-                            updateSemesterCounts();
-                        }
-                        initSemesterFilters();
-                        
-                        console.log('✅ 資料載入完成!');
-                        return;
-                    } else {
-                        console.log('⚠️ Firebase 文件存在，但', currentLearner, '沒有資料');
-                    }
-                } else {
-                    console.log('⚠️ Firebase 文件不存在（首次使用）');
-                }
-                
-                // 只有在完全沒有資料時才載入預設
-                console.log('📦 載入預設資料...');
-                loadData();
-                
-                // 載入完預設資料後自動儲存到雲端
-                console.log('💾 將預設資料儲存到 Firebase...');
-                await saveToFirebase();
-                console.log('✅ 預設資料已儲存');
-                
-                initSemesterFilters();
-                
-            } catch (error) {
-                console.error('❌ 載入失敗:', error);
-                alert('載入資料失敗：' + error.message + '\n\n請重新整理頁面');
-            }
-        }
-        
-        // 儲存到 Firebase
-        async function saveToFirebase() {
-            if (!currentUser) {
-                console.warn('⚠️ 未登入，無法儲存到 Firebase');
-                return;
-            }
-            
-            try {
-                const charCount = learnedCharacters.size;
-                const wordCount = learnedWords.size;
-                
-                console.log('💾 準備儲存到 Firebase...');
-                console.log('  學習者:', currentLearner);
-                console.log('  字數:', charCount);
-                console.log('  詞數:', wordCount);
-                
-                const dataToSave = {
-                    characters: Object.fromEntries(learnedCharacters),
-                    words: Object.fromEntries(learnedWords)
-                };
-                
-                // 如果是妹妹，也儲存相近字
-                if (currentLearner === 'sister') {
-                    dataToSave.similarPairs = similarCharPairs;
-                    console.log('  相近字組:', similarCharPairs.length);
-                }
-                
-                await db.collection('users').doc(currentUser.uid).set({
-                    [currentLearner]: dataToSave
-                }, { merge: true });
-                
-                console.log('✅ 儲存成功！');
-                
-            } catch (error) {
-                console.error('❌ 儲存失敗:', error);
-                alert('儲存失敗：' + error.message + '\n\n你的變更可能無法同步到其他裝置');
-            }
-        }
-        
-        // 修改原有的 saveData 函式
-        const _originalSaveCurrentLearnerData = saveCurrentLearnerData;
-        saveCurrentLearnerData = function() {
-            _originalSaveCurrentLearnerData();
-            saveToFirebase();
-        };
-
-        // 初始化學期篩選顯示（哥哥顯示，妹妹隱藏）
-        function initSemesterFilters() {
-            const semesterFilterChar = document.getElementById('semesterFilterChar');
-            const semesterFilterWord = document.getElementById('semesterFilterWord');
-            const lessonFilterChar = document.getElementById('lessonFilterChar');
-            const lessonFilterWord = document.getElementById('lessonFilterWord');
-            
-            if (currentLearner === 'brother') {
-                semesterFilterChar.style.display = 'block';
-                semesterFilterWord.style.display = 'block';
-                lessonFilterChar.style.display = 'block';
-                lessonFilterWord.style.display = 'block';
-                updateLessonOptions();
-                updateSemesterCounts();
-            } else {
-                semesterFilterChar.style.display = 'none';
-                semesterFilterWord.style.display = 'none';
-                lessonFilterChar.style.display = 'none';
-                lessonFilterWord.style.display = 'none';
-            }
-        }
-        
-        // Firebase 認證後初始化
-        setTimeout(() => {
-            initSemesterFilters();
-        }, 1000);
-        
-        // ==================== 相近字辨識功能（妹妹專屬）====================
+// ==================== 相近字辨識功能（妹妹專屬）====================
         
         // 管理相近字
         function manageSimilarChars() {
@@ -3315,7 +3008,7 @@
         // 儲存相近字到 localStorage 和 Firebase
         function saveSimilarPairs() {
             localStorage.setItem('sister_similarPairs', JSON.stringify(similarCharPairs));
-            saveSimilarPairsToFirebase();
+            // 本地版本不需要 Firebase 同步
         }
         
         // 載入相近字
@@ -3330,37 +3023,41 @@
             }
         }
         
-        // 儲存到 Firebase
-        async function saveSimilarPairsToFirebase() {
-            if (!currentUser || currentLearner !== 'sister') return;
-            try {
-                await db.collection('users').doc(currentUser.uid).set({
-                    sister: {
-                        similarPairs: similarCharPairs
-                    }
+        // 本地版本不需要 Firebase 同步
                 }, { merge: true });
             } catch (error) {
                 console.error('儲存相近字失敗:', error);
             }
         }
         
-        // 從 Firebase 載入相近字
-        async function loadSimilarPairsFromFirebase() {
-            if (!currentUser || currentLearner !== 'sister') return;
-            try {
-                const doc = await db.collection('users').doc(currentUser.uid).get();
-                if (doc.exists) {
-                    const data = doc.data().sister;
-                    if (data && data.similarPairs) {
-                        similarCharPairs = data.similarPairs;
-                        localStorage.setItem('sister_similarPairs', JSON.stringify(similarCharPairs));
-                    }
-                }
+        }
             } catch (error) {
                 console.error('載入相近字失敗:', error);
             }
         }
         
+
+        // ==================== 頁面初始化 ====================
+        
+        // 頁面載入完成後自動執行
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('📱 中文學習記錄器 - 本地版');
+            console.log('✓ 不需要登入，資料存在瀏覽器本地');
+            
+            // 載入資料
+            loadData();
+            
+            // 更新 UI
+            updateUI();
+            
+            // 初始化篩選器
+            initSemesterFilters();
+            
+            console.log('✅ 載入完成');
+            console.log('  當前學習者:', currentLearner === 'brother' ? '哥哥' : '妹妹');
+            console.log('  字數:', learnedCharacters.size);
+            console.log('  詞數:', learnedWords.size);
+        });
     </script>
     </div> <!-- 關閉 appContent -->
 </body>
